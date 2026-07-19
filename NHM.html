@@ -1,0 +1,2078 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>maze</title>
+<style>
+  html, body {
+    margin: 0; padding: 0; overflow: hidden;
+    width: 100%; height: 100%;
+    background: #000;
+    touch-action: none;
+    -webkit-user-select: none; user-select: none;
+    overscroll-behavior: none;
+  }
+  canvas { display: block; }
+
+  #hud {
+    position: fixed; top: 14px; left: 16px;
+    color: rgba(180,180,180,0.55);
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  #invHud {
+    position: fixed; top: 34px; left: 16px;
+    color: rgba(180,180,180,0.5);
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  #vignette {
+    position: fixed; inset: 0;
+    pointer-events: none;
+    background: radial-gradient(ellipse at center, rgba(0,0,0,0) 35%, rgba(0,0,0,0.92) 100%);
+    z-index: 5;
+  }
+
+  #clickPrompt {
+    position: fixed; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    color: rgba(200,200,200,0.75);
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    background: rgba(0,0,0,0.55);
+    cursor: pointer;
+    z-index: 20;
+  }
+
+  #message {
+    position: fixed; top: 18%; left: 50%;
+    transform: translate(-50%, -50%);
+    color: rgba(220,220,220,0.9);
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    z-index: 12;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+
+  #interactPrompt {
+    position: fixed; left: 50%; bottom: 210px;
+    transform: translateX(-50%);
+    display: none;
+    padding: 10px 18px;
+    color: rgba(230,230,230,0.9);
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.28);
+    border-radius: 4px;
+    z-index: 16;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  #interactPrompt.locked {
+    color: rgba(150,150,150,0.55);
+    background: rgba(255,255,255,0.03);
+    border-color: rgba(255,255,255,0.14);
+    cursor: default;
+  }
+
+  #lookLayer {
+    position: fixed; inset: 0;
+    z-index: 8;
+    display: none;
+    touch-action: none;
+  }
+
+  #dpad {
+    position: fixed; left: 22px; bottom: 26px;
+    width: 168px; height: 168px;
+    display: none;
+    grid-template-columns: repeat(3, 54px);
+    grid-template-rows: repeat(3, 54px);
+    grid-template-areas:
+      ".    up    ."
+      "left .     right"
+      ".    down  .";
+    gap: 3px;
+    z-index: 15;
+  }
+  .dpad-btn {
+    display: flex; align-items: center; justify-content: center;
+    background-color: #141414;
+    border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 7px;
+    touch-action: none;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.14),
+      inset 0 -3px 5px rgba(0,0,0,0.55),
+      0 2px 3px rgba(0,0,0,0.55);
+    transition: transform 0.06s ease;
+  }
+  .dpad-btn.active {
+    box-shadow:
+      inset 0 2px 6px rgba(0,0,0,0.75),
+      inset 0 -1px 0 rgba(255,255,255,0.06);
+    transform: scale(0.93);
+  }
+  .arrow { width: 0; height: 0; filter: drop-shadow(0 1px 1px rgba(0,0,0,0.65)); }
+  .arrow-up { border-left: 9px solid transparent; border-right: 9px solid transparent; border-bottom: 15px solid rgba(205,205,205,0.8); }
+  .arrow-down { border-left: 9px solid transparent; border-right: 9px solid transparent; border-top: 15px solid rgba(205,205,205,0.8); }
+  .arrow-left { border-top: 9px solid transparent; border-bottom: 9px solid transparent; border-right: 15px solid rgba(205,205,205,0.8); }
+  .arrow-right { border-top: 9px solid transparent; border-bottom: 9px solid transparent; border-left: 15px solid rgba(205,205,205,0.8); }
+  .dpad-btn.active .arrow { filter: drop-shadow(0 0 4px rgba(255,255,255,0.55)); }
+  #dpad-up { grid-area: up; }
+  #dpad-down { grid-area: down; }
+  #dpad-left { grid-area: left; }
+  #dpad-right { grid-area: right; }
+
+  #settingsBtn {
+    position: fixed; top: 14px; right: 14px;
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    display: none;
+    align-items: center; justify-content: center;
+    background-color: #141414;
+    border: 1px solid rgba(255,255,255,0.16);
+    z-index: 17;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.14),
+      inset 0 -3px 5px rgba(0,0,0,0.55),
+      0 2px 3px rgba(0,0,0,0.55);
+  }
+
+  #settingsPanel, #notebookPanel, #minigamePanel, #codePanel {
+    position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    display: none;
+    flex-direction: column;
+    gap: 14px;
+    padding: 22px 20px;
+    background: rgba(8,8,8,0.94);
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 8px;
+    font-family: 'Courier New', monospace;
+    color: rgba(220,220,220,0.9);
+    z-index: 25;
+  }
+  #settingsPanel { width: 260px; }
+  #notebookPanel { width: 320px; max-height: 70vh; color: rgba(215,215,205,0.92); }
+  #minigamePanel { width: 240px; align-items: center; }
+  #codePanel { width: 240px; align-items: center; }
+
+  #codeDigits {
+    font-size: 32px;
+    letter-spacing: 0.3em;
+    text-align: center;
+    color: rgba(230,230,230,0.95);
+    padding: 6px 0;
+  }
+  #codeHint {
+    font-size: 11px;
+    font-style: italic;
+    color: rgba(170,170,170,0.6);
+    text-align: center;
+  }
+
+  #settingsTitle, #notebookTitle, #minigameTitle, #codeTitle {
+    font-size: 13px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(190,190,190,0.8);
+    border-bottom: 1px solid rgba(255,255,255,0.15);
+    padding-bottom: 8px;
+    width: 100%;
+  }
+  #sensLabel, #volLabel {
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: rgba(190,190,190,0.8);
+  }
+  #sensSlider, #volSlider { width: 100%; accent-color: #999; }
+
+  #notebookText {
+    font-size: 12.5px;
+    line-height: 1.65;
+    letter-spacing: 0.01em;
+    overflow-y: auto;
+    max-height: 46vh;
+    padding-right: 6px;
+  }
+  #notebookText p { margin: 0 0 12px 0; }
+  #notebookText .torn { color: rgba(170,170,170,0.55); font-style: italic; }
+
+  #settingsClose, #notebookClose, #minigameCancel, #codeClose {
+    align-self: flex-end;
+    padding: 6px 14px;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border: 1px solid rgba(255,255,255,0.22);
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  #settingsClose:active, #notebookClose:active, #minigameCancel:active, #codeClose:active { background: rgba(255,255,255,0.12); }
+
+  #minigameGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 54px);
+    grid-template-rows: repeat(3, 54px);
+    gap: 8px;
+  }
+  .mole-hole {
+    width: 54px; height: 54px;
+    border-radius: 50%;
+    background: #141414;
+    border: 1px solid rgba(255,255,255,0.14);
+    box-shadow: inset 0 3px 6px rgba(0,0,0,0.7);
+    transition: background 0.08s ease, transform 0.08s ease, box-shadow 0.08s ease;
+  }
+  .mole-hole.up {
+    background: radial-gradient(circle, rgba(235,235,235,0.95), rgba(150,150,150,0.65));
+    box-shadow: 0 0 14px rgba(255,255,255,0.55), inset 0 0 4px rgba(255,255,255,0.4);
+    transform: scale(1.08);
+  }
+  #minigameStatus {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(190,190,190,0.8);
+  }
+
+  #deathOverlay {
+    position: fixed; inset: 0;
+    background: #000;
+    opacity: 0;
+    transition: opacity 0.9s ease;
+    z-index: 40;
+    pointer-events: none;
+  }
+  #deathMessage {
+    position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 78%;
+    text-align: center;
+    color: rgba(210,210,210,0.92);
+    font-family: 'Courier New', monospace;
+    font-size: 15px;
+    letter-spacing: 0.04em;
+    line-height: 1.6;
+    opacity: 0;
+    transition: opacity 1.2s ease 0.5s;
+    z-index: 41;
+    pointer-events: none;
+  }
+
+  #fadeOverlay {
+    position: fixed; inset: 0;
+    background: #000;
+    opacity: 0;
+    z-index: 45;
+    pointer-events: none;
+  }
+  #stairQte {
+    position: fixed; top: 45%; left: 50%;
+    transform: translate(-50%, -50%);
+    display: none;
+    padding: 14px 26px;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.4);
+    border-radius: 6px;
+    color: rgba(240,240,240,0.95);
+    font-family: 'Courier New', monospace;
+    font-size: 15px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    z-index: 42;
+    cursor: pointer;
+    animation: qtePulse 0.5s ease-in-out infinite alternate;
+  }
+  @keyframes qtePulse {
+    from { transform: translate(-50%, -50%) scale(1); }
+    to { transform: translate(-50%, -50%) scale(1.08); }
+  }
+  #winMessage {
+    position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80%;
+    text-align: center;
+    color: rgba(225,225,225,0.95);
+    font-family: 'Courier New', monospace;
+    font-size: 20px;
+    letter-spacing: 0.08em;
+    line-height: 1.6;
+    text-transform: uppercase;
+    opacity: 0;
+    transition: opacity 1.4s ease;
+    z-index: 46;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+
+<div id="hud">wasd / arrows — move &nbsp;·&nbsp; mouse — look</div>
+<div id="invHud">carrying: —</div>
+<div id="vignette"></div>
+<div id="message"></div>
+<div id="interactPrompt">press e — interact</div>
+<div id="clickPrompt">click to enable mouse look</div>
+<div id="lookLayer"></div>
+<div id="dpad">
+  <div class="dpad-btn" id="dpad-up"><span class="arrow arrow-up"></span></div>
+  <div class="dpad-btn" id="dpad-left"><span class="arrow arrow-left"></span></div>
+  <div class="dpad-btn" id="dpad-right"><span class="arrow arrow-right"></span></div>
+  <div class="dpad-btn" id="dpad-down"><span class="arrow arrow-down"></span></div>
+</div>
+<div id="settingsBtn">
+  <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+    <g fill="rgba(210,210,210,0.85)">
+      <circle cx="12" cy="12" r="4.2" fill="none" stroke="rgba(210,210,210,0.85)" stroke-width="2.6"/>
+      <rect x="10.8" y="1" width="2.4" height="4"/>
+      <rect x="10.8" y="19" width="2.4" height="4"/>
+      <rect x="1" y="10.8" width="4" height="2.4"/>
+      <rect x="19" y="10.8" width="4" height="2.4"/>
+      <g transform="rotate(45 12 12)">
+        <rect x="10.8" y="1" width="2.4" height="4"/>
+        <rect x="10.8" y="19" width="2.4" height="4"/>
+        <rect x="1" y="10.8" width="4" height="2.4"/>
+        <rect x="19" y="10.8" width="4" height="2.4"/>
+      </g>
+    </g>
+  </svg>
+</div>
+<div id="settingsPanel">
+  <div id="settingsTitle">settings</div>
+  <label id="sensLabel" for="sensSlider">look sensitivity: <span id="sensValue"></span>/10</label>
+  <input type="range" id="sensSlider" step="0.0005">
+  <label id="volLabel" for="volSlider">music volume: <span id="volValue"></span>%</label>
+  <input type="range" id="volSlider" min="0" max="100" step="5">
+  <div id="settingsClose">close</div>
+</div>
+<div id="notebookPanel">
+  <div id="notebookTitle">alchemist's journal — entry i</div>
+  <div id="notebookText">
+    <p>I don't understand. I was a simple alchemist — well, not really a simple one. I made many things and experienced a lot of ideas, but most of my work ended in nothing. Nothing happening, over and over. It drives me mad. I accumulated thousands of elements, thousands of possibilities, but my mind wanted more. Nothing happens, and it happens again and again. But then something happened. I didn't know it then, but now I understand — I shouldn't have messed with a concept I didn't know. I have to get out, or at least survive. If I survive, I can return. I won't make the same error.</p>
+    <p>I can't understand it. It does seem in vain, but no cruel person would make an almost insanely large maze just to torment someone who's done wrong. I feel so exhausted. Death, and death, and I keep going. But why. I have to get out. There is a way, but nothing. It watches me painfully. It gets so hard to see justice in this cruel punishment — it isn't jestful. It all fades into black-and-white. There is an exit somewhere, I know it. But the walls change. Always.</p>
+    <p>My eyes betray me most of all. Everything that was color is gone — I see only shades of grey now, as if the world drained alongside me. Even the halls feel wrong, too straight, too square, corners where there should be none, like something reshaped this place into blocks and lines just to mock the mind that built it. And still my body does not tire. I should have collapsed by now — days ago, weeks maybe — but my legs keep moving, my breath keeps coming, endless, tireless, and somehow that is worse than exhaustion ever was. To have no excuse to stop. To only be able to keep going. Forever, it feels. Unbearable, and still I persist.</p>
+    <p class="torn">(the ink smears past this point — the rest is unreadable, for now.)</p>
+  </div>
+  <div id="notebookClose">close</div>
+</div>
+<div id="codePanel">
+  <div id="codeTitle">a torn scrap of paper</div>
+  <div id="codeDigits">- - - -</div>
+  <div id="codeHint">four digits, scratched in a hurried hand. no lock is mentioned.</div>
+  <div id="codeClose">close</div>
+</div>
+<div id="minigamePanel">
+  <div id="minigameTitle">pick the lock</div>
+  <div id="minigameGrid">
+    <div class="mole-hole"></div><div class="mole-hole"></div><div class="mole-hole"></div>
+    <div class="mole-hole"></div><div class="mole-hole"></div><div class="mole-hole"></div>
+    <div class="mole-hole"></div><div class="mole-hole"></div><div class="mole-hole"></div>
+  </div>
+  <div id="minigameStatus">hits: 0 / 7</div>
+  <div id="minigameCancel">run</div>
+</div>
+<div id="deathOverlay"></div>
+<div id="fadeOverlay"></div>
+<div id="stairQte">press space</div>
+<div id="winMessage">nothing is here.<br>congratulations.</div>
+<div id="deathMessage"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function () {
+  // ---------- constants ----------
+  const SIZE1 = 5, SIZE2 = 21;
+  const CELL = 4;
+  const WALL_H = 3;
+  const WALL_T = 0.3;
+  const EYE_HEIGHT = 1.6;
+  const PLAYER_RADIUS = 0.35;
+  const MOVE_SPEED = 4.2;
+  const MOUSE_SENS = 0.0022;
+  let TOUCH_LOOK_SENS = 0.0055;
+  const SENS_MIN = 0.0015, SENS_MAX = 0.014;
+  const PITCH_LIMIT = Math.PI / 2 - 0.05;
+  const PICKUP_RADIUS = 0.9;
+  const INTERACT_RADIUS = 1.5;
+  const DOOR_DURATION = 1.1;
+  const MONSTER_SPEED = 3.4;
+  const CATCH_RADIUS = 0.85;
+  const DANGER_RADIUS = 20;
+  const PATH_RECOMPUTE_INTERVAL = 0.4;
+  const STRAIGHT_BIAS = 0.32; // < 1 biases maze generation toward turns over long straights
+  const BRAID_CHANCE = 0.6; // chance a dead-end in maze2 gets an extra loop connection instead of staying a dead-end
+  const EXTRA_LOCKED_DOORS = 3;
+  const EXTRA_MINIGAME_DOORS = 3;
+  const MINIGAME_TOTAL_ROUNDS = 7;
+  const MINIGAME_REQUIRED_HITS = 5;
+  const MINIGAME_HOLE_COUNT = 9;
+
+  // stairs-escape prototype (fires when door2 opens)
+  const STAIR_TILE = 2;
+  const STAIR_SIZE = 3;
+  const STAIR_SPAN = STAIR_TILE * STAIR_SIZE;
+  const STAIR_WALL_H = 18;
+  const STAIR_ORIGIN_X = 400;
+  const STAIR_ORIGIN_Z = 400;
+  const STAIR_DURATION = 20;
+  const LOOKBACK_ANGLE_DEG = 100;
+  const LOOKBACK_RATE_MULT = 0.5;
+  const STAIR_QTE_MIN_INTERVAL = 3.2;
+  const STAIR_QTE_MAX_INTERVAL = 5.2;
+  const STAIR_QTE_WINDOW = 0.85;
+  const STAIR_QTE_FAIL_MULT = 0.35;
+  const STAIR_QTE_FAIL_DURATION = 2.4;
+  const STAIR_GAP_MAX = 6;
+  const STAIR_GAP_START = 4;
+
+  // ---------- renderer / scene / camera ----------
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  document.body.appendChild(renderer.domElement);
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x000000);
+  scene.fog = new THREE.FogExp2(0x000000, 0.085);
+
+  const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.05, 900);
+  scene.add(camera);
+
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+
+  // ---------- lighting ----------
+  const ambient = new THREE.AmbientLight(0x35383c, 0.55);
+  scene.add(ambient);
+  const AMBIENT_BASE = 0.55;
+
+  const flashlight = new THREE.PointLight(0xc8c8c8, 1.2, 9, 2);
+  flashlight.position.set(0, 0.1, 0);
+  camera.add(flashlight);
+
+  // ---------- shared eye texture (monster + moon) ----------
+  const eyeTextureDataURL = "data:image/jpeg;base64,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";
+  const eyeTexture = new THREE.TextureLoader().load(eyeTextureDataURL);
+
+  // ---------- sky + moon ----------
+  const skyMaterial = new THREE.MeshBasicMaterial({ color: 0x0b0b0b, side: THREE.BackSide, fog: false });
+  const sky = new THREE.Mesh(new THREE.SphereGeometry(400, 16, 12), skyMaterial);
+  scene.add(sky);
+
+  const moonMaterial = new THREE.SpriteMaterial({ map: eyeTexture, fog: false, color: 0xd6d6d6 });
+  const moon = new THREE.Sprite(moonMaterial);
+  moon.scale.set(70, 70, 1);
+  moon.position.set(30, 150, -55);
+  scene.add(moon);
+
+  // ---------- procedural grayscale noise textures ----------
+  function makeNoiseTexture(size, base, variance) {
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    const img = ctx.createImageData(size, size);
+    for (let i = 0; i < img.data.length; i += 4) {
+      const v = Math.max(0, Math.min(255, base + (Math.random() - 0.5) * variance * 2));
+      img.data[i] = v; img.data[i + 1] = v; img.data[i + 2] = v; img.data[i + 3] = 255;
+    }
+    ctx.putImageData(img, 0, 0);
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    return tex;
+  }
+
+  const wallTex = makeNoiseTexture(128, 92, 34);
+  wallTex.repeat.set(1.5, 1);
+  const wallMaterial = new THREE.MeshStandardMaterial({ map: wallTex, roughness: 1, metalness: 0 });
+
+  const floorTex = makeNoiseTexture(128, 55, 22);
+  floorTex.repeat.set(SIZE1, SIZE1);
+  const floorMaterial = new THREE.MeshStandardMaterial({ map: floorTex, roughness: 1, metalness: 0 });
+
+  const doorMaterial = new THREE.MeshStandardMaterial({ color: 0x5a5d61, roughness: 0.3, metalness: 0.8 });
+  const doorMaterialLocked = new THREE.MeshStandardMaterial({ color: 0x2c2c2c, roughness: 1, metalness: 0.2 });
+  const doorMaterialMini = new THREE.MeshStandardMaterial({ color: 0x5a5d61, roughness: 0.25, metalness: 0.85 });
+
+  // ---------- maze generation (turn-biased recursive backtracker) ----------
+  function generateMaze(size, straightBias) {
+    const cells = [];
+    for (let y = 0; y < size; y++) {
+      const row = [];
+      for (let x = 0; x < size; x++) {
+        row.push({ x, y, visited: false, enteredDir: null, walls: { N: true, E: true, S: true, W: true } });
+      }
+      cells.push(row);
+    }
+    const dirs = [
+      { dx: 0, dy: -1, me: 'N', opp: 'S' },
+      { dx: 1, dy: 0, me: 'E', opp: 'W' },
+      { dx: 0, dy: 1, me: 'S', opp: 'N' },
+      { dx: -1, dy: 0, me: 'W', opp: 'E' }
+    ];
+    const stack = [];
+    let current = cells[0][0];
+    current.visited = true;
+    stack.push(current);
+    while (stack.length) {
+      current = stack[stack.length - 1];
+      const candidates = [];
+      for (const d of dirs) {
+        const nx = current.x + d.dx, ny = current.y + d.dy;
+        if (nx >= 0 && nx < size && ny >= 0 && ny < size && !cells[ny][nx].visited) {
+          candidates.push({ cell: cells[ny][nx], dir: d });
+        }
+      }
+      if (candidates.length) {
+        const weights = candidates.map((c) => (current.enteredDir && c.dir.me === current.enteredDir) ? straightBias : 1);
+        const totalW = weights.reduce((a, b) => a + b, 0);
+        let r = Math.random() * totalW;
+        let chosenIdx = candidates.length - 1;
+        for (let i = 0; i < weights.length; i++) {
+          r -= weights[i];
+          if (r <= 0) { chosenIdx = i; break; }
+        }
+        const pick = candidates[chosenIdx];
+        current.walls[pick.dir.me] = false;
+        pick.cell.walls[pick.dir.opp] = false;
+        pick.cell.visited = true;
+        pick.cell.enteredDir = pick.dir.me;
+        stack.push(pick.cell);
+      } else {
+        stack.pop();
+      }
+    }
+    return cells;
+  }
+
+  function bfsDistances(cells, size, sx, sy) {
+    const dist = Array.from({ length: size }, () => Array(size).fill(-1));
+    dist[sy][sx] = 0;
+    const queue = [[sx, sy]];
+    const dirs = [{ dx: 0, dy: -1, dir: 'N' }, { dx: 1, dy: 0, dir: 'E' }, { dx: 0, dy: 1, dir: 'S' }, { dx: -1, dy: 0, dir: 'W' }];
+    while (queue.length) {
+      const [x, y] = queue.shift();
+      const cell = cells[y][x];
+      for (const d of dirs) {
+        if (!cell.walls[d.dir]) {
+          const nx = x + d.dx, ny = y + d.dy;
+          if (nx >= 0 && nx < size && ny >= 0 && ny < size && dist[ny][nx] === -1) {
+            dist[ny][nx] = dist[y][x] + 1;
+            queue.push([nx, ny]);
+          }
+        }
+      }
+    }
+    return dist;
+  }
+
+  function findPath(cells, size, sx, sy, gx, gy) {
+    const visited = Array.from({ length: size }, () => Array(size).fill(false));
+    const parent = Array.from({ length: size }, () => Array(size).fill(null));
+    visited[sy][sx] = true;
+    const queue = [[sx, sy]];
+    const dirs = [{ dx: 0, dy: -1, dir: 'N' }, { dx: 1, dy: 0, dir: 'E' }, { dx: 0, dy: 1, dir: 'S' }, { dx: -1, dy: 0, dir: 'W' }];
+    while (queue.length) {
+      const [x, y] = queue.shift();
+      if (x === gx && y === gy) break;
+      const cell = cells[y][x];
+      for (const d of dirs) {
+        if (!cell.walls[d.dir]) {
+          const nx = x + d.dx, ny = y + d.dy;
+          if (nx >= 0 && nx < size && ny >= 0 && ny < size && !visited[ny][nx]) {
+            visited[ny][nx] = true;
+            parent[ny][nx] = [x, y];
+            queue.push([nx, ny]);
+          }
+        }
+      }
+    }
+    if (!visited[gy][gx]) return [];
+    const path = [];
+    let cx = gx, cy = gy;
+    while (!(cx === sx && cy === sy)) {
+      path.push({ x: cx, y: cy });
+      const p = parent[cy][cx];
+      if (!p) break;
+      cx = p[0]; cy = p[1];
+    }
+    path.reverse();
+    return path;
+  }
+
+  function braidMaze(cells, size, braidChance) {
+    const dirs = [
+      { dx: 0, dy: -1, me: 'N', opp: 'S' },
+      { dx: 1, dy: 0, me: 'E', opp: 'W' },
+      { dx: 0, dy: 1, me: 'S', opp: 'N' },
+      { dx: -1, dy: 0, me: 'W', opp: 'E' }
+    ];
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) {
+        const cell = cells[y][x];
+        const openCount = dirs.filter((d) => !cell.walls[d.me]).length;
+        if (openCount === 1 && Math.random() < braidChance) {
+          const candidates = [];
+          for (const d of dirs) {
+            if (!cell.walls[d.me]) continue;
+            const nx = x + d.dx, ny = y + d.dy;
+            if (nx >= 0 && nx < size && ny >= 0 && ny < size) candidates.push(d);
+          }
+          if (candidates.length) {
+            const d = candidates[Math.floor(Math.random() * candidates.length)];
+            cell.walls[d.me] = false;
+            cells[y + d.dy][x + d.dx].walls[d.opp] = false;
+          }
+        }
+      }
+    }
+  }
+
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+    }
+    return a;
+  }
+
+  function makeDarknessGrid(size) {
+    const grid = [];
+    for (let y = 0; y < size; y++) {
+      const row = [];
+      for (let x = 0; x < size; x++) {
+        row.push(Math.random() < 0.18 ? 0.55 + Math.random() * 0.4 : Math.random() * 0.15);
+      }
+      grid.push(row);
+    }
+    return grid;
+  }
+
+  // ---------- generic wall builder (used for both mazes) ----------
+  function buildMazeWalls(cellsData, size, cellSize, offsetX, offsetZ, material, boxesArr, opts) {
+    opts = opts || {};
+    const internal = [];
+    const allWalls = [];
+    function addNS(cx, edgeCz, isInternal) {
+      const geo = new THREE.BoxGeometry(cellSize + WALL_T, WALL_H, WALL_T);
+      const mesh = new THREE.Mesh(geo, material);
+      mesh.position.set(offsetX + cx * cellSize + cellSize / 2, WALL_H / 2, offsetZ + edgeCz * cellSize);
+      scene.add(mesh);
+      const box = new THREE.Box3().setFromObject(mesh);
+      boxesArr.push(box);
+      const rec = { mesh, box, orientation: 'NS', cx, cz: edgeCz };
+      allWalls.push(rec);
+      if (isInternal) internal.push(rec);
+    }
+    function addWE(edgeCx, cz, isInternal) {
+      const geo = new THREE.BoxGeometry(WALL_T, WALL_H, cellSize + WALL_T);
+      const mesh = new THREE.Mesh(geo, material);
+      mesh.position.set(offsetX + edgeCx * cellSize, WALL_H / 2, offsetZ + cz * cellSize + cellSize / 2);
+      scene.add(mesh);
+      const box = new THREE.Box3().setFromObject(mesh);
+      boxesArr.push(box);
+      const rec = { mesh, box, orientation: 'WE', cx: edgeCx, cz };
+      allWalls.push(rec);
+      if (isInternal) internal.push(rec);
+    }
+    for (let cz = 0; cz < size; cz++) {
+      for (let cx = 0; cx < size; cx++) {
+        const cell = cellsData[cz][cx];
+        const skipN = opts.skipNorth && opts.skipNorth(cx, cz);
+        const skipS = opts.skipSouth && opts.skipSouth(cx, cz);
+        if (cell.walls.N && !skipN) addNS(cx, cz, cz > 0);
+        if (cell.walls.W) addWE(cx, cz, cx > 0);
+        if (cz === size - 1 && cell.walls.S && !skipS) addNS(cx, cz + 1, false);
+        if (cx === size - 1 && cell.walls.E) addWE(cx + 1, cz, false);
+      }
+    }
+    return { internal, allWalls };
+  }
+
+  const wallBoxes = [];
+
+  // ---------- stairs-escape prototype: an isolated test box, not yet part of the maze geography ----------
+  function buildStairTestBox() {
+    const span = STAIR_SPAN;
+    const specs = [
+      { w: span + WALL_T, h: STAIR_WALL_H, d: WALL_T, x: STAIR_ORIGIN_X + span / 2, z: STAIR_ORIGIN_Z },
+      { w: span + WALL_T, h: STAIR_WALL_H, d: WALL_T, x: STAIR_ORIGIN_X + span / 2, z: STAIR_ORIGIN_Z + span },
+      { w: WALL_T, h: STAIR_WALL_H, d: span + WALL_T, x: STAIR_ORIGIN_X, z: STAIR_ORIGIN_Z + span / 2 },
+      { w: WALL_T, h: STAIR_WALL_H, d: span + WALL_T, x: STAIR_ORIGIN_X + span, z: STAIR_ORIGIN_Z + span / 2 }
+    ];
+    for (const s of specs) {
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(s.w, s.h, s.d), wallMaterial);
+      mesh.position.set(s.x, s.h / 2, s.z);
+      scene.add(mesh);
+      wallBoxes.push(new THREE.Box3().setFromObject(mesh));
+    }
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(span, span), floorMaterial);
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.set(STAIR_ORIGIN_X + span / 2, 0, STAIR_ORIGIN_Z + span / 2);
+    scene.add(floor);
+  }
+  buildStairTestBox();
+
+  const stairEntityMaterial = new THREE.SpriteMaterial({ map: eyeTexture, fog: true });
+  const stairEntity = new THREE.Sprite(stairEntityMaterial);
+  stairEntity.scale.set(1.7, 1.7, 1);
+  stairEntity.visible = false;
+  scene.add(stairEntity);
+
+  // ---------- maze 1 (5x5, spawn maze) ----------
+  const maze1 = generateMaze(SIZE1, STRAIGHT_BIAS);
+  const dist1 = bfsDistances(maze1, SIZE1, 0, 0);
+  const darkness1 = makeDarknessGrid(SIZE1);
+
+  let exitCX = 0, exitBest = -1;
+  for (let x = 0; x < SIZE1; x++) {
+    const d = dist1[SIZE1 - 1][x];
+    if (d > exitBest) { exitBest = d; exitCX = x; }
+  }
+
+  buildMazeWalls(maze1, SIZE1, CELL, 0, 0, wallMaterial, wallBoxes, {
+    skipSouth: (cx) => cx === exitCX
+  });
+
+  const span1 = SIZE1 * CELL;
+  const floor1 = new THREE.Mesh(new THREE.PlaneGeometry(span1, span1), floorMaterial);
+  floor1.rotation.x = -Math.PI / 2;
+  floor1.position.set(span1 / 2, 0, span1 / 2);
+  scene.add(floor1);
+
+  const door1Mesh = new THREE.Mesh(new THREE.BoxGeometry(CELL + WALL_T, WALL_H, WALL_T), doorMaterial);
+  door1Mesh.position.set(exitCX * CELL + CELL / 2, WALL_H / 2, SIZE1 * CELL);
+  scene.add(door1Mesh);
+  let door1Box = new THREE.Box3().setFromObject(door1Mesh);
+  wallBoxes.push(door1Box);
+  const door1State = { open: false, opening: false, t: 0 };
+
+  // ---------- maze 2 (15x15, beyond the exit door) ----------
+  const maze2 = generateMaze(SIZE2, STRAIGHT_BIAS);
+  braidMaze(maze2, SIZE2, BRAID_CHANCE);
+  const dist2 = bfsDistances(maze2, SIZE2, 0, 0);
+  const darkness2 = makeDarknessGrid(SIZE2);
+  const offsetX2 = exitCX * CELL;
+  const offsetZ2 = SIZE1 * CELL;
+
+  const { internal: internal2, allWalls: allWalls2 } = buildMazeWalls(maze2, SIZE2, CELL, offsetX2, offsetZ2, wallMaterial, wallBoxes, {
+    skipNorth: (cx, cz) => cx === 0 && cz === 0
+  });
+
+  const span2 = SIZE2 * CELL;
+  const floorTex2 = floorTex.clone();
+  floorTex2.needsUpdate = true;
+  floorTex2.repeat.set(SIZE2, SIZE2);
+  const floorMaterial2 = new THREE.MeshStandardMaterial({ map: floorTex2, roughness: 1, metalness: 0 });
+  const floor2 = new THREE.Mesh(new THREE.PlaneGeometry(span2, span2), floorMaterial2);
+  floor2.rotation.x = -Math.PI / 2;
+  floor2.position.set(offsetX2 + span2 / 2, 0, offsetZ2 + span2 / 2);
+  scene.add(floor2);
+
+  // door 2: internal shortcut inside maze2 — requires the blue key. nothing lies beyond it yet.
+  const door2Edge = internal2[Math.floor(Math.random() * internal2.length)];
+  scene.remove(door2Edge.mesh);
+  {
+    const idx = wallBoxes.indexOf(door2Edge.box);
+    if (idx > -1) wallBoxes.splice(idx, 1);
+  }
+  let door2Mesh;
+  if (door2Edge.orientation === 'NS') {
+    door2Mesh = new THREE.Mesh(new THREE.BoxGeometry(CELL + WALL_T, WALL_H, WALL_T), doorMaterial);
+    door2Mesh.position.set(offsetX2 + door2Edge.cx * CELL + CELL / 2, WALL_H / 2, offsetZ2 + door2Edge.cz * CELL);
+  } else {
+    door2Mesh = new THREE.Mesh(new THREE.BoxGeometry(WALL_T, WALL_H, CELL + WALL_T), doorMaterial);
+    door2Mesh.position.set(offsetX2 + door2Edge.cx * CELL, WALL_H / 2, offsetZ2 + door2Edge.cz * CELL + CELL / 2);
+  }
+  scene.add(door2Mesh);
+  let door2Box = new THREE.Box3().setFromObject(door2Mesh);
+  wallBoxes.push(door2Box);
+  const door2State = { open: false, opening: false, t: 0 };
+
+  // ---------- extra utility doors (locked / minigame) scattered through maze2 ----------
+  const utilityDoors = [];
+  function buildUtilityDoor(edge, type) {
+    scene.remove(edge.mesh);
+    const idx = wallBoxes.indexOf(edge.box);
+    if (idx > -1) wallBoxes.splice(idx, 1);
+    const mat = type === 'locked' ? doorMaterialLocked : doorMaterialMini;
+    let mesh;
+    if (edge.orientation === 'NS') {
+      mesh = new THREE.Mesh(new THREE.BoxGeometry(CELL + WALL_T, WALL_H, WALL_T), mat);
+      mesh.position.set(offsetX2 + edge.cx * CELL + CELL / 2, WALL_H / 2, offsetZ2 + edge.cz * CELL);
+    } else {
+      mesh = new THREE.Mesh(new THREE.BoxGeometry(WALL_T, WALL_H, CELL + WALL_T), mat);
+      mesh.position.set(offsetX2 + edge.cx * CELL, WALL_H / 2, offsetZ2 + edge.cz * CELL + CELL / 2);
+    }
+    scene.add(mesh);
+    const box = new THREE.Box3().setFromObject(mesh);
+    wallBoxes.push(box);
+    if (type === 'minigame') {
+      const glow = new THREE.PointLight(0xcccccc, 0.35, 1.6, 2);
+      glow.position.set(0, 0.15, edge.orientation === 'NS' ? 0.18 : 0);
+      mesh.add(glow);
+    }
+    utilityDoors.push({ mesh, box, state: { open: false, opening: false, t: 0 }, type });
+  }
+  const remainingInternal2 = internal2.filter((e) => e !== door2Edge);
+  const shuffledInternal2 = shuffle(remainingInternal2);
+  const lockedEdges = shuffledInternal2.slice(0, EXTRA_LOCKED_DOORS);
+  const minigameEdges = shuffledInternal2.slice(EXTRA_LOCKED_DOORS, EXTRA_LOCKED_DOORS + EXTRA_MINIGAME_DOORS);
+  for (const e of lockedEdges) buildUtilityDoor(e, 'locked');
+  for (const e of minigameEdges) buildUtilityDoor(e, 'minigame');
+
+  // ---------- keys ----------
+  function makeKeyMesh(colorHex, emissiveHex) {
+    const group = new THREE.Group();
+    const mat = new THREE.MeshStandardMaterial({ color: colorHex, emissive: emissiveHex, roughness: 0.3, metalness: 0.6 });
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.045, 10, 20), mat);
+    ring.rotation.x = Math.PI / 2;
+    const shaft = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.4), mat);
+    shaft.position.z = 0.32;
+    const tooth1 = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.1, 0.05), mat);
+    tooth1.position.set(0, -0.06, 0.48);
+    const tooth2 = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.08, 0.05), mat);
+    tooth2.position.set(0, -0.05, 0.38);
+    group.add(ring, shaft, tooth1, tooth2);
+    const glow = new THREE.PointLight(colorHex, 0.7, 3, 2);
+    group.add(glow);
+    return group;
+  }
+
+  let redBest = -1, redCX = 0, redCZ = 0;
+  for (let y = 0; y < SIZE1; y++) {
+    for (let x = 0; x < SIZE1; x++) {
+      const onBoundary = (x === 0 || x === SIZE1 - 1 || y === 0 || y === SIZE1 - 1);
+      if (!onBoundary) continue;
+      if (x === exitCX && y === SIZE1 - 1) continue;
+      if (x === 0 && y === 0) continue;
+      if (dist1[y][x] > redBest) { redBest = dist1[y][x]; redCX = x; redCZ = y; }
+    }
+  }
+  const keyBaseY = 0.95;
+  let redKeyGroup = makeKeyMesh(0xdd2b2b, 0x661111);
+  redKeyGroup.position.set(redCX * CELL + CELL / 2, keyBaseY, redCZ * CELL + CELL / 2);
+  scene.add(redKeyGroup);
+
+  let blueBest = -1, blueCX = 0, blueCZ = 0;
+  for (let y = 0; y < SIZE2; y++) {
+    for (let x = 0; x < SIZE2; x++) {
+      if (dist2[y][x] > blueBest) { blueBest = dist2[y][x]; blueCX = x; blueCZ = y; }
+    }
+  }
+  let blueKeyGroup = makeKeyMesh(0x2b6bdd, 0x112a66);
+  blueKeyGroup.position.set(offsetX2 + blueCX * CELL + CELL / 2, keyBaseY, offsetZ2 + blueCZ * CELL + CELL / 2);
+  scene.add(blueKeyGroup);
+
+  // ---------- table + notebook (spawn room lore) ----------
+  function buildTable(x, z) {
+    const group = new THREE.Group();
+    const topMat = new THREE.MeshStandardMaterial({ color: 0x3a3a3a, roughness: 0.9 });
+    const legMat = new THREE.MeshStandardMaterial({ color: 0x262626, roughness: 0.9 });
+    const top = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.08, 0.72), topMat);
+    top.position.y = 0.75;
+    group.add(top);
+    const legGeo = new THREE.BoxGeometry(0.08, 0.75, 0.08);
+    const offs = [[-0.52, -0.3], [0.52, -0.3], [-0.52, 0.3], [0.52, 0.3]];
+    for (const [ox, oz] of offs) {
+      const leg = new THREE.Mesh(legGeo, legMat);
+      leg.position.set(ox, 0.375, oz);
+      group.add(leg);
+    }
+    group.position.set(x, 0, z);
+    return group;
+  }
+  const tableX = 1.15, tableZ = 1.15;
+  const tableGroup = buildTable(tableX, tableZ);
+  scene.add(tableGroup);
+  tableGroup.updateMatrixWorld(true);
+  wallBoxes.push(new THREE.Box3().setFromObject(tableGroup));
+
+  const notebookMaterial = new THREE.MeshStandardMaterial({ color: 0x4a4238, roughness: 0.85 });
+  const notebookMesh = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.05, 0.26), notebookMaterial);
+  notebookMesh.position.set(tableX + 0.05, 0.75 + 0.04 + 0.025, tableZ);
+  notebookMesh.rotation.y = 0.4;
+  scene.add(notebookMesh);
+
+  // ---------- monster (the watching eye) ----------
+  const monsterMaterial = new THREE.SpriteMaterial({ map: eyeTexture, fog: true });
+  const monster = new THREE.Sprite(monsterMaterial);
+  monster.scale.set(1.9, 1.9, 1);
+
+  let maxDist2 = 0;
+  for (let y = 0; y < SIZE2; y++) for (let x = 0; x < SIZE2; x++) if (dist2[y][x] > maxDist2) maxDist2 = dist2[y][x];
+  const targetDist = maxDist2 * 0.55;
+  let monsterCX = 1, monsterCZ = 1, monsterBestDiff = Infinity;
+  for (let y = 0; y < SIZE2; y++) {
+    for (let x = 0; x < SIZE2; x++) {
+      if (x === blueCX && y === blueCZ) continue;
+      if (dist2[y][x] < 3) continue;
+      const diff = Math.abs(dist2[y][x] - targetDist);
+      if (diff < monsterBestDiff) { monsterBestDiff = diff; monsterCX = x; monsterCZ = y; }
+    }
+  }
+  monster.position.set(offsetX2 + monsterCX * CELL + CELL / 2, 1.5, offsetZ2 + monsterCZ * CELL + CELL / 2);
+  scene.add(monster);
+
+  let monsterPath = [];
+  let pathRecomputeTimer = 0;
+  function worldToCell2(wx, wz) {
+    const cx = Math.max(0, Math.min(SIZE2 - 1, Math.floor((wx - offsetX2) / CELL)));
+    const cz = Math.max(0, Math.min(SIZE2 - 1, Math.floor((wz - offsetZ2) / CELL)));
+    return { cx, cz };
+  }
+
+  // ---------- code table (maze2): a paper with a 4-digit code to memorize ----------
+  const secretCode = String(Math.floor(Math.random() * 10)) + String(Math.floor(Math.random() * 10)) +
+    String(Math.floor(Math.random() * 10)) + String(Math.floor(Math.random() * 10));
+  const codeTargetDist = maxDist2 * 0.35;
+  let codeCX = 1, codeCZ = 1, codeBestDiff = Infinity;
+  for (let y = 0; y < SIZE2; y++) {
+    for (let x = 0; x < SIZE2; x++) {
+      if (x === blueCX && y === blueCZ) continue;
+      if (x === monsterCX && y === monsterCZ) continue;
+      const diff = Math.abs(dist2[y][x] - codeTargetDist);
+      if (diff < codeBestDiff) { codeBestDiff = diff; codeCX = x; codeCZ = y; }
+    }
+  }
+  const codeTableX = offsetX2 + codeCX * CELL + CELL / 2 - 0.3;
+  const codeTableZ = offsetZ2 + codeCZ * CELL + CELL / 2 - 0.3;
+  const codeTableGroup = buildTable(codeTableX, codeTableZ);
+  scene.add(codeTableGroup);
+  codeTableGroup.updateMatrixWorld(true);
+  wallBoxes.push(new THREE.Box3().setFromObject(codeTableGroup));
+
+  const paperMaterial = new THREE.MeshStandardMaterial({ color: 0xc9c5b9, roughness: 0.95 });
+  const paperMesh = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.01, 0.22), paperMaterial);
+  paperMesh.position.set(codeTableX + 0.05, 0.75 + 0.04 + 0.005, codeTableZ);
+  paperMesh.rotation.y = -0.3;
+  scene.add(paperMesh);
+
+  // ---------- atmosphere props (maze2): sparse, monochrome, isolation-themed set dressing ----------
+  function buildChair(x, z, rotY) {
+    const group = new THREE.Group();
+    const mat = new THREE.MeshStandardMaterial({ color: 0x2f2f2f, roughness: 0.95 });
+    const seat = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.05, 0.42), mat);
+    seat.position.y = 0.45;
+    group.add(seat);
+    const back = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.5, 0.05), mat);
+    back.position.set(0, 0.7, -0.2);
+    group.add(back);
+    const legGeo = new THREE.BoxGeometry(0.05, 0.45, 0.05);
+    const offs = [[-0.17, -0.17], [0.17, -0.17], [-0.17, 0.17], [0.17, 0.17]];
+    for (const [ox, oz] of offs) {
+      const leg = new THREE.Mesh(legGeo, mat);
+      leg.position.set(ox, 0.225, oz);
+      group.add(leg);
+    }
+    group.position.set(x, 0, z);
+    group.rotation.y = rotY;
+    return group;
+  }
+
+  function buildCairn(x, z) {
+    const group = new THREE.Group();
+    const mat = new THREE.MeshStandardMaterial({ color: 0x494949, roughness: 1 });
+    const sizes = [0.32, 0.24, 0.17, 0.11];
+    let y = 0.06;
+    for (const s of sizes) {
+      const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(s, 0), mat);
+      rock.position.set((Math.random() - 0.5) * 0.05, y, (Math.random() - 0.5) * 0.05);
+      rock.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+      group.add(rock);
+      y += s * 0.85;
+    }
+    group.position.set(x, 0, z);
+    return group;
+  }
+
+  function buildTallyMarks(count) {
+    const group = new THREE.Group();
+    const mat = new THREE.MeshStandardMaterial({ color: 0x161616, roughness: 1 });
+    const n = Math.min(count, 4);
+    for (let i = 0; i < n; i++) {
+      const line = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.22, 0.01), mat);
+      line.position.x = (i - (n - 1) / 2) * 0.06;
+      group.add(line);
+    }
+    if (count >= 5) {
+      const slash = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.02, 0.01), mat);
+      slash.rotation.z = Math.PI / 4;
+      group.add(slash);
+    }
+    return group;
+  }
+
+  function placeTallyMarks(wallRec) {
+    const group = buildTallyMarks(3 + Math.floor(Math.random() * 3));
+    const along = (Math.random() - 0.5) * (CELL * 0.5);
+    const h = 1.1 + Math.random() * 0.4;
+    if (wallRec.orientation === 'NS') {
+      group.position.set(wallRec.mesh.position.x + along, h, wallRec.mesh.position.z - WALL_T / 2 - 0.006);
+    } else {
+      group.rotation.y = Math.PI / 2;
+      group.position.set(wallRec.mesh.position.x - WALL_T / 2 - 0.006, h, wallRec.mesh.position.z + along);
+    }
+    scene.add(group);
+  }
+
+  function randomCellAvoiding(size, avoid, minSep) {
+    for (let attempt = 0; attempt < 80; attempt++) {
+      const x = Math.floor(Math.random() * size);
+      const y = Math.floor(Math.random() * size);
+      if (x === 0 && y === 0) continue;
+      let ok = true;
+      for (const c of avoid) {
+        if (Math.hypot(x - c.x, y - c.y) < minSep) { ok = false; break; }
+      }
+      if (ok) return { x, y };
+    }
+    return null;
+  }
+
+  const occupiedCells2 = [
+    { x: blueCX, y: blueCZ }, { x: monsterCX, y: monsterCZ }, { x: codeCX, y: codeCZ }, { x: 0, y: 0 }
+  ];
+
+  for (let i = 0; i < 5; i++) {
+    const c = randomCellAvoiding(SIZE2, occupiedCells2, 2.2);
+    if (!c) break;
+    occupiedCells2.push(c);
+    const chair = buildChair(
+      offsetX2 + c.x * CELL + CELL / 2 + (Math.random() - 0.5) * 1.2,
+      offsetZ2 + c.y * CELL + CELL / 2 + (Math.random() - 0.5) * 1.2,
+      Math.random() * Math.PI * 2
+    );
+    scene.add(chair);
+    chair.updateMatrixWorld(true);
+    wallBoxes.push(new THREE.Box3().setFromObject(chair));
+  }
+
+  for (let i = 0; i < 4; i++) {
+    const c = randomCellAvoiding(SIZE2, occupiedCells2, 2.2);
+    if (!c) break;
+    occupiedCells2.push(c);
+    const cairn = buildCairn(
+      offsetX2 + c.x * CELL + CELL / 2 + (Math.random() - 0.5) * 1.2,
+      offsetZ2 + c.y * CELL + CELL / 2 + (Math.random() - 0.5) * 1.2
+    );
+    scene.add(cairn);
+    cairn.updateMatrixWorld(true);
+    wallBoxes.push(new THREE.Box3().setFromObject(cairn));
+  }
+
+  {
+    const usedEdgeMeshes = new Set([door2Edge.mesh, ...lockedEdges.map((e) => e.mesh), ...minigameEdges.map((e) => e.mesh)]);
+    const internalMeshSet = new Set(internal2.map((e) => e.mesh));
+    const decorableWalls = shuffle(allWalls2.filter((w) => internalMeshSet.has(w.mesh) && !usedEdgeMeshes.has(w.mesh)));
+    for (let i = 0; i < 8 && i < decorableWalls.length; i++) placeTallyMarks(decorableWalls[i]);
+  }
+
+  // ---------- wayfinding arrows: spray-painted marks on walls guiding toward the red key, blue key, and code paper ----------
+  const dirRotationY = { E: 0, S: -Math.PI / 2, W: Math.PI, N: Math.PI / 2 };
+  function dirLetter(dx, dz) {
+    if (dx === 1) return 'E';
+    if (dx === -1) return 'W';
+    if (dz === 1) return 'S';
+    return 'N';
+  }
+  // walls running N/S carry E/W-pointing marks; walls running E/W carry N/S-pointing marks
+  const wallNaturalDir = { N: 'E', S: 'W', W: 'N', E: 'S' };
+  const wallFaceRotationY = { N: 0, S: Math.PI, W: Math.PI / 2, E: -Math.PI / 2 };
+
+  function makeArrowSprayCanvas(flip) {
+    const w = 128, h = 64;
+    const canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    const px = (x) => (flip ? w - x : x);
+    ctx.fillStyle = 'rgba(220,220,214,0.88)';
+    ctx.beginPath();
+    ctx.moveTo(px(w * 0.08), h * 0.42);
+    ctx.lineTo(px(w * 0.60), h * 0.42);
+    ctx.lineTo(px(w * 0.60), h * 0.20);
+    ctx.lineTo(px(w * 0.94), h * 0.50);
+    ctx.lineTo(px(w * 0.60), h * 0.80);
+    ctx.lineTo(px(w * 0.60), h * 0.58);
+    ctx.lineTo(px(w * 0.08), h * 0.58);
+    ctx.closePath();
+    ctx.fill();
+    // spray-can grunge: scattered speckle around the shape
+    for (let i = 0; i < 55; i++) {
+      const rx = w * 0.04 + Math.random() * w * 0.92;
+      const ry = h * 0.10 + Math.random() * h * 0.80;
+      const r = Math.random() * 1.6 + 0.3;
+      ctx.globalAlpha = Math.random() * 0.32;
+      ctx.beginPath();
+      ctx.arc(rx, ry, r, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(210,210,204,1)';
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    // drip streaks, like overloaded spray paint
+    for (let i = 0; i < 3; i++) {
+      const dx2 = w * 0.15 + Math.random() * w * 0.55;
+      const len = 5 + Math.random() * 12;
+      ctx.fillStyle = 'rgba(210,210,204,0.4)';
+      ctx.fillRect(dx2, h * 0.6, 1.3, len);
+    }
+    return canvas;
+  }
+  function buildArrowDecal(flip) {
+    const canvas = makeArrowSprayCanvas(flip);
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.needsUpdate = true;
+    const mat = new THREE.MeshStandardMaterial({ map: texture, transparent: true, roughness: 1, metalness: 0, side: THREE.DoubleSide });
+    return new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.4), mat);
+  }
+  function wallMountPosition(cx, cz, side, offX, offZ) {
+    const eps = 0.008;
+    if (side === 'N') return { x: offX + cx * CELL + CELL / 2, z: offZ + cz * CELL + WALL_T / 2 + eps };
+    if (side === 'S') return { x: offX + cx * CELL + CELL / 2, z: offZ + (cz + 1) * CELL - WALL_T / 2 - eps };
+    if (side === 'E') return { x: offX + (cx + 1) * CELL - WALL_T / 2 - eps, z: offZ + cz * CELL + CELL / 2 };
+    return { x: offX + cx * CELL + WALL_T / 2 + eps, z: offZ + cz * CELL + CELL / 2 };
+  }
+  function pickMountSideForDir(cell, letter) {
+    const candidates = (letter === 'E' || letter === 'W') ? ['N', 'S'] : ['E', 'W'];
+    for (const d of candidates) { if (cell.walls[d]) return d; }
+    return null;
+  }
+  function findJunctionMarkers(mazeCells, size, startX, startY, goalX, goalY) {
+    const path = findPath(mazeCells, size, startX, startY, goalX, goalY);
+    if (!path.length) return [];
+    const full = [{ x: startX, y: startY }].concat(path);
+    const sides = ['N', 'E', 'S', 'W'];
+    const markers = [];
+    for (let i = 1; i < full.length - 1; i++) {
+      const cur = full[i], next = full[i + 1];
+      const cell = mazeCells[cur.y][cur.x];
+      const degree = sides.filter((d) => !cell.walls[d]).length;
+      if (degree >= 3) markers.push({ x: cur.x, y: cur.y, outDx: next.x - cur.x, outDz: next.y - cur.y });
+    }
+    return markers;
+  }
+  function placeWayfindingArrows(mazeCells, size, startX, startY, goalX, goalY, offX, offZ, trackArr) {
+    const markers = findJunctionMarkers(mazeCells, size, startX, startY, goalX, goalY);
+    for (const t of markers) {
+      const letter = dirLetter(t.outDx, t.outDz);
+      const cell = mazeCells[t.y][t.x];
+      const side = pickMountSideForDir(cell, letter);
+      let arrow;
+      if (side) {
+        const flip = wallNaturalDir[side] !== letter;
+        arrow = buildArrowDecal(flip);
+        arrow.rotation.y = wallFaceRotationY[side];
+        const p = wallMountPosition(t.x, t.y, side, offX, offZ);
+        arrow.position.set(p.x, 1.3, p.z);
+      } else {
+        // rare fallback: no wall in the needed orientation — paint it on the floor instead
+        arrow = buildArrowDecal(false);
+        arrow.rotation.set(-Math.PI / 2, dirRotationY[letter], 0, 'YXZ');
+        arrow.position.set(offX + t.x * CELL + CELL / 2, 0.02, offZ + t.y * CELL + CELL / 2);
+      }
+      scene.add(arrow);
+      trackArr.push(arrow);
+    }
+  }
+  const redKeyArrows = [];
+  const blueKeyArrows = [];
+  const codeArrows = [];
+  placeWayfindingArrows(maze1, SIZE1, 0, 0, redCX, redCZ, 0, 0, redKeyArrows);
+  placeWayfindingArrows(maze2, SIZE2, 0, 0, blueCX, blueCZ, offsetX2, offsetZ2, blueKeyArrows);
+  placeWayfindingArrows(maze2, SIZE2, 0, 0, codeCX, codeCZ, offsetX2, offsetZ2, codeArrows);
+
+  // ---------- inventory ----------
+  const inventory = new Set();
+  const invLabels = { key_red: 'red key', key_blue: 'blue key' };
+  const invHudEl = document.getElementById('invHud');
+  function updateInventoryHud() {
+    const items = Array.from(inventory).map((id) => invLabels[id] || id);
+    invHudEl.textContent = 'carrying: ' + (items.length ? items.join(', ') : '—');
+  }
+
+  // ---------- messages ----------
+  const messageEl = document.getElementById('message');
+  let msgTimer = 0;
+  function showMessage(text) {
+    messageEl.textContent = text;
+    messageEl.style.opacity = '1';
+    msgTimer = 2.2;
+  }
+
+  // ---------- death ----------
+  let dead = false;
+  const deathMessages = [
+    'Nothing succeeds because it never happened.',
+    'No one can remove the dread of failure because you amounted to nothing.',
+    'No one came to your side, you were alone where nothing was there.',
+    'Nothing.. you saw nothing but eigengrau.',
+    'Nothing was successful but you failed.'
+  ];
+  const deathOverlayEl = document.getElementById('deathOverlay');
+  const deathMessageEl = document.getElementById('deathMessage');
+  function die() {
+    if (dead) return;
+    dead = true;
+    const msg = deathMessages[Math.floor(Math.random() * deathMessages.length)];
+    deathMessageEl.textContent = msg;
+    deathOverlayEl.style.pointerEvents = 'auto';
+    deathOverlayEl.style.opacity = '1';
+    deathMessageEl.style.opacity = '1';
+    setTimeout(() => { location.reload(); }, 3200);
+  }
+
+  // ---------- stairs-escape prototype state ----------
+  let stairsActive = false;
+  let stairsTriggered = false;
+  let stairsEnded = false;
+  let stairsProgress = 0;
+  let stairsGap = STAIR_GAP_START;
+  let stairsPenaltyTimer = 0;
+  let stairsQteActive = false;
+  let stairsQteWindowLeft = 0;
+  let stairsQteNextIn = 3;
+
+  function startStairsSequence() {
+    if (stairsTriggered) return;
+    stairsTriggered = true;
+    fadeOverlayEl.style.transition = 'opacity 0.5s ease';
+    fadeOverlayEl.style.opacity = '1';
+    setTimeout(() => {
+      stairsActive = true;
+      stairsProgress = 0;
+      stairsGap = STAIR_GAP_START;
+      stairsPenaltyTimer = 0;
+      stairsQteActive = false;
+      stairsQteNextIn = 3 + Math.random() * 1.5;
+      camera.position.set(STAIR_ORIGIN_X + STAIR_SPAN / 2, EYE_HEIGHT, STAIR_ORIGIN_Z + STAIR_SPAN / 2);
+      yaw = 0; pitch = 0;
+      stairEntity.visible = true;
+      showMessage('run.');
+      setTimeout(() => {
+        fadeOverlayEl.style.transition = 'opacity 0.8s ease';
+        fadeOverlayEl.style.opacity = '0';
+      }, 200);
+    }, 550);
+  }
+
+  function finishStairsSequence() {
+    stairsActive = false;
+    fadeOverlayEl.style.transition = 'opacity 1.1s ease';
+    fadeOverlayEl.style.opacity = '1';
+    fadeOverlayEl.style.pointerEvents = 'auto';
+    setTimeout(() => { winMessageEl.style.opacity = '1'; }, 900);
+  }
+
+  // ---------- procedural audio (ambient dread + proximity-driven tension) ----------
+  let audioCtx = null;
+  let audioStarted = false;
+  let masterGain = null;
+  let masterVolume = 0.7;
+  let droneGain = null;
+  let tensionGain = null;
+  let tensionLFO = null;
+
+  function initAudio() {
+    if (audioStarted) return;
+    audioStarted = true;
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+
+      masterGain = audioCtx.createGain();
+      masterGain.gain.value = masterVolume;
+      masterGain.connect(audioCtx.destination);
+
+      // low ambient drone, two detuned oscillators for unease
+      droneGain = audioCtx.createGain();
+      droneGain.gain.value = 0.13;
+      droneGain.connect(masterGain);
+
+      const drone1 = audioCtx.createOscillator();
+      drone1.type = 'sine';
+      drone1.frequency.value = 46;
+      drone1.connect(droneGain);
+      drone1.start();
+
+      const drone2 = audioCtx.createOscillator();
+      drone2.type = 'sine';
+      drone2.frequency.value = 69.6;
+      const drone2Gain = audioCtx.createGain();
+      drone2Gain.gain.value = 0.5;
+      drone2.connect(drone2Gain);
+      drone2Gain.connect(droneGain);
+      drone2.start();
+
+      // slow breathing amplitude LFO on the drone
+      const breathLFO = audioCtx.createOscillator();
+      breathLFO.frequency.value = 0.07;
+      const breathLFOGain = audioCtx.createGain();
+      breathLFOGain.gain.value = 0.09;
+      breathLFO.connect(breathLFOGain);
+      breathLFOGain.connect(droneGain.gain);
+      breathLFO.start();
+
+      // filtered noise hiss
+      const bufferSize = audioCtx.sampleRate * 2;
+      const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const noiseData = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) noiseData[i] = Math.random() * 2 - 1;
+      const noiseSource = audioCtx.createBufferSource();
+      noiseSource.buffer = noiseBuffer;
+      noiseSource.loop = true;
+      const noiseFilter = audioCtx.createBiquadFilter();
+      noiseFilter.type = 'lowpass';
+      noiseFilter.frequency.value = 2600;
+      noiseFilter.Q.value = 0.5;
+      const noiseGain = audioCtx.createGain();
+      noiseGain.gain.value = 0.05;
+      noiseSource.connect(noiseFilter);
+      noiseFilter.connect(noiseGain);
+      noiseGain.connect(masterGain);
+      noiseSource.start();
+
+      // tension layer: dissonant near-unison saws, silent until the entity closes in
+      tensionGain = audioCtx.createGain();
+      tensionGain.gain.value = 0;
+      tensionGain.connect(masterGain);
+
+      const t1 = audioCtx.createOscillator();
+      t1.type = 'sawtooth';
+      t1.frequency.value = 110;
+      t1.connect(tensionGain);
+      t1.start();
+
+      const t2 = audioCtx.createOscillator();
+      t2.type = 'sawtooth';
+      t2.frequency.value = 116;
+      t2.connect(tensionGain);
+      t2.start();
+
+      tensionLFO = audioCtx.createOscillator();
+      tensionLFO.frequency.value = 1.6;
+      const tensionLFOGain = audioCtx.createGain();
+      tensionLFOGain.gain.value = 0.07;
+      tensionLFO.connect(tensionLFOGain);
+      tensionLFOGain.connect(tensionGain.gain);
+      tensionLFO.start();
+    } catch (err) {
+      audioCtx = null;
+    }
+  }
+
+  function playHeartbeatThump(vol) {
+    if (!audioCtx || !masterGain) return;
+    const t = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(72, t);
+    osc.frequency.exponentialRampToValueAtTime(36, t + 0.18);
+    const g = audioCtx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(Math.max(0.001, vol), t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.28);
+    osc.connect(g);
+    g.connect(masterGain);
+    osc.start(t);
+    osc.stop(t + 0.3);
+  }
+
+  // ---------- collision ----------
+  function collides(x, z) {
+    for (const box of wallBoxes) {
+      const cx = Math.max(box.min.x, Math.min(x, box.max.x));
+      const cz = Math.max(box.min.z, Math.min(z, box.max.z));
+      const dx = x - cx, dz = z - cz;
+      if (dx * dx + dz * dz < PLAYER_RADIUS * PLAYER_RADIUS) return true;
+    }
+    return false;
+  }
+
+  function segmentIntersectsBox2D(x1, z1, x2, z2, box) {
+    const dx = x2 - x1, dz = z2 - z1;
+    let tmin = 0, tmax = 1;
+    if (Math.abs(dx) < 1e-9) {
+      if (x1 < box.min.x || x1 > box.max.x) return false;
+    } else {
+      let t1 = (box.min.x - x1) / dx, t2 = (box.max.x - x1) / dx;
+      if (t1 > t2) { const tmp = t1; t1 = t2; t2 = tmp; }
+      tmin = Math.max(tmin, t1);
+      tmax = Math.min(tmax, t2);
+      if (tmin > tmax) return false;
+    }
+    if (Math.abs(dz) < 1e-9) {
+      if (z1 < box.min.z || z1 > box.max.z) return false;
+    } else {
+      let t1 = (box.min.z - z1) / dz, t2 = (box.max.z - z1) / dz;
+      if (t1 > t2) { const tmp = t1; t1 = t2; t2 = tmp; }
+      tmin = Math.max(tmin, t1);
+      tmax = Math.min(tmax, t2);
+      if (tmin > tmax) return false;
+    }
+    return tmin <= tmax;
+  }
+  function hasLineOfSight(x1, z1, x2, z2) {
+    for (const box of wallBoxes) {
+      if (segmentIntersectsBox2D(x1, z1, x2, z2, box)) return false;
+    }
+    return true;
+  }
+
+  // ---------- player state ----------
+  let yaw = 0, pitch = 0;
+  const start1 = maze1[0][0];
+  if (!start1.walls.E) yaw = -Math.PI / 2;
+  else if (!start1.walls.S) yaw = Math.PI;
+
+  camera.position.set(CELL / 2, EYE_HEIGHT, CELL / 2);
+  camera.rotation.order = 'YXZ';
+  camera.rotation.set(pitch, yaw, 0);
+
+  // ---------- interaction ----------
+  let currentInteractTarget = null;
+  let currentInteractRef = null;
+  let shakeTime = 0;
+
+  function openDoor1() {
+    if (door1State.open || door1State.opening) return;
+    door1State.opening = true;
+    door1State.t = 0;
+    const idx = wallBoxes.indexOf(door1Box);
+    if (idx > -1) wallBoxes.splice(idx, 1);
+    shakeTime = 0.4;
+    inventory.delete('key_red');
+    updateInventoryHud();
+    showMessage('door unlocked');
+  }
+  function openDoor2() {
+    if (door2State.open || door2State.opening) return;
+    door2State.opening = true;
+    door2State.t = 0;
+    const idx = wallBoxes.indexOf(door2Box);
+    if (idx > -1) wallBoxes.splice(idx, 1);
+    shakeTime = 0.4;
+    inventory.delete('key_blue');
+    updateInventoryHud();
+    showMessage('door unlocked');
+  }
+  function openUtilityDoor(doorObj) {
+    if (doorObj.state.open || doorObj.state.opening) return;
+    doorObj.state.opening = true;
+    doorObj.state.t = 0;
+    const idx = wallBoxes.indexOf(doorObj.box);
+    if (idx > -1) wallBoxes.splice(idx, 1);
+    shakeTime = 0.4;
+  }
+  function tryInteract() {
+    if (minigameOpen) return;
+    if (currentInteractTarget === 'door1') openDoor1();
+    else if (currentInteractTarget === 'door2') openDoor2();
+    else if (currentInteractTarget === 'notebook') openNotebook();
+    else if (currentInteractTarget === 'code') openCode();
+    else if (currentInteractTarget === 'minigame') startMinigame(currentInteractRef);
+  }
+
+  // ---------- pause state ----------
+  let settingsOpen = false;
+  let notebookOpen = false;
+  let minigameOpen = false;
+  let codeOpen = false;
+  let codeRead = false;
+  function uiPaused() { return settingsOpen || notebookOpen || codeOpen || dead; }
+  function movementPaused() { return uiPaused() || minigameOpen || stairsEnded; }
+
+  function openCode() {
+    codeOpen = true;
+    codeDigitsEl.textContent = secretCode.split('').join('   ');
+    codePanel.style.display = 'flex';
+    if (document.pointerLockElement) document.exitPointerLock();
+    clickPrompt.style.display = 'none';
+    if (!codeRead) {
+      codeRead = true;
+      codeArrows.forEach((a) => scene.remove(a));
+      codeArrows.length = 0;
+    }
+  }
+  function closeCode() {
+    codeOpen = false;
+    codePanel.style.display = 'none';
+    if (!isTouch && document.pointerLockElement !== renderer.domElement) clickPrompt.style.display = 'flex';
+  }
+
+  function openNotebook() {
+    notebookOpen = true;
+    notebookPanel.style.display = 'flex';
+    if (document.pointerLockElement) document.exitPointerLock();
+    clickPrompt.style.display = 'none';
+  }
+  function closeNotebook() {
+    notebookOpen = false;
+    notebookPanel.style.display = 'none';
+    if (!isTouch && document.pointerLockElement !== renderer.domElement) clickPrompt.style.display = 'flex';
+  }
+  function openSettings() {
+    settingsOpen = true;
+    settingsPanel.style.display = 'flex';
+    if (document.pointerLockElement) document.exitPointerLock();
+    clickPrompt.style.display = 'none';
+  }
+  function closeSettings() {
+    settingsOpen = false;
+    settingsPanel.style.display = 'none';
+    if (!isTouch && document.pointerLockElement !== renderer.domElement) clickPrompt.style.display = 'flex';
+  }
+
+  // ---------- lock-picking minigame ----------
+  let minigameActiveDoor = null;
+  let minigameRound = 0, minigameHits = 0, minigameActiveHole = -1, minigameHoleTimer = null;
+  function startMinigame(doorObj) {
+    minigameOpen = true;
+    minigameActiveDoor = doorObj;
+    minigameRound = 0;
+    minigameHits = 0;
+    minigamePanel.style.display = 'flex';
+    if (document.pointerLockElement) document.exitPointerLock();
+    clickPrompt.style.display = 'none';
+    nextMinigameRound();
+  }
+  function clearHoleActive() {
+    if (minigameHoleTimer) { clearTimeout(minigameHoleTimer); minigameHoleTimer = null; }
+    moleHoles.forEach((h) => h.classList.remove('up'));
+  }
+  function nextMinigameRound() {
+    clearHoleActive();
+    minigameRound++;
+    minigameStatusEl.textContent = 'hits: ' + minigameHits + ' / ' + MINIGAME_TOTAL_ROUNDS;
+    if (minigameRound > MINIGAME_TOTAL_ROUNDS) {
+      finishMinigame();
+      return;
+    }
+    let idx;
+    do { idx = Math.floor(Math.random() * MINIGAME_HOLE_COUNT); } while (idx === minigameActiveHole);
+    minigameActiveHole = idx;
+    moleHoles[idx].classList.add('up');
+    const upTime = Math.max(420, 780 - minigameRound * 45);
+    minigameHoleTimer = setTimeout(() => { clearHoleActive(); nextMinigameRound(); }, upTime);
+  }
+  function hitHole(idx) {
+    if (!minigameOpen) return;
+    if (idx === minigameActiveHole) {
+      minigameHits++;
+      clearHoleActive();
+      nextMinigameRound();
+    }
+  }
+  function closeMinigamePanel() {
+    clearHoleActive();
+    minigamePanel.style.display = 'none';
+    minigameOpen = false;
+    if (!isTouch && document.pointerLockElement !== renderer.domElement) clickPrompt.style.display = 'flex';
+  }
+  function cancelMinigame() {
+    closeMinigamePanel();
+    minigameActiveDoor = null;
+  }
+  function finishMinigame() {
+    const success = minigameHits >= MINIGAME_REQUIRED_HITS;
+    const doorObj = minigameActiveDoor;
+    closeMinigamePanel();
+    minigameActiveDoor = null;
+    if (success) {
+      openUtilityDoor(doorObj);
+      showMessage('lock picked');
+    } else {
+      showMessage('lock resisted');
+    }
+  }
+
+  // ---------- keyboard ----------
+  const keys = {};
+  window.addEventListener('keydown', (e) => {
+    initAudio();
+    keys[e.code] = true;
+    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) e.preventDefault();
+    if (dead) return;
+    if (e.code === 'KeyE') tryInteract();
+    if (e.code === 'KeyQ' && !minigameOpen) { settingsOpen ? closeSettings() : openSettings(); }
+    if (e.code === 'Space') hitStairQte();
+  });
+  window.addEventListener('keyup', (e) => { keys[e.code] = false; });
+  window.addEventListener('pointerdown', () => initAudio());
+
+  // ---------- dom refs ----------
+  const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+  const clickPrompt = document.getElementById('clickPrompt');
+  const dpadEl = document.getElementById('dpad');
+  const lookLayer = document.getElementById('lookLayer');
+  const hudEl = document.getElementById('hud');
+  const interactPromptEl = document.getElementById('interactPrompt');
+  const settingsBtn = document.getElementById('settingsBtn');
+  const settingsPanel = document.getElementById('settingsPanel');
+  const sensSlider = document.getElementById('sensSlider');
+  const sensValueEl = document.getElementById('sensValue');
+  const settingsCloseEl = document.getElementById('settingsClose');
+  const notebookPanel = document.getElementById('notebookPanel');
+  const notebookCloseEl = document.getElementById('notebookClose');
+  const codePanel = document.getElementById('codePanel');
+  const codeDigitsEl = document.getElementById('codeDigits');
+  const codeCloseEl = document.getElementById('codeClose');
+  const volSlider = document.getElementById('volSlider');
+  const volValueEl = document.getElementById('volValue');
+  const minigamePanel = document.getElementById('minigamePanel');
+  const minigameStatusEl = document.getElementById('minigameStatus');
+  const minigameCancelEl = document.getElementById('minigameCancel');
+  const moleHoles = Array.from(document.querySelectorAll('.mole-hole'));
+  const fadeOverlayEl = document.getElementById('fadeOverlay');
+  const stairQteEl = document.getElementById('stairQte');
+  const winMessageEl = document.getElementById('winMessage');
+
+  if (isTouch) {
+    hudEl.textContent = 'd-pad — move  ·  drag — look';
+    clickPrompt.style.display = 'none';
+    dpadEl.style.display = 'grid';
+    lookLayer.style.display = 'block';
+    settingsBtn.style.display = 'flex';
+  } else {
+    hudEl.textContent = 'wasd / arrows — move  ·  mouse — look  ·  e — interact  ·  q — settings';
+    clickPrompt.addEventListener('click', () => { initAudio(); renderer.domElement.requestPointerLock(); });
+    document.addEventListener('pointerlockchange', () => {
+      clickPrompt.style.display = (document.pointerLockElement === renderer.domElement) ? 'none' : 'flex';
+    });
+    document.addEventListener('mousemove', (e) => {
+      if (movementPaused()) return;
+      if (document.pointerLockElement !== renderer.domElement) return;
+      yaw -= e.movementX * MOUSE_SENS;
+      pitch -= e.movementY * MOUSE_SENS;
+      pitch = Math.max(-PITCH_LIMIT, Math.min(PITCH_LIMIT, pitch));
+    });
+  }
+
+  // ---------- settings panel wiring ----------
+  function sensDisplay(v) {
+    const frac = (v - SENS_MIN) / (SENS_MAX - SENS_MIN);
+    return Math.round(frac * 9 + 1);
+  }
+  sensSlider.min = SENS_MIN;
+  sensSlider.max = SENS_MAX;
+  sensSlider.value = TOUCH_LOOK_SENS;
+  sensValueEl.textContent = sensDisplay(TOUCH_LOOK_SENS);
+  sensSlider.addEventListener('input', () => {
+    TOUCH_LOOK_SENS = parseFloat(sensSlider.value);
+    sensValueEl.textContent = sensDisplay(TOUCH_LOOK_SENS);
+  });
+  volSlider.value = masterVolume * 100;
+  volValueEl.textContent = Math.round(masterVolume * 100);
+  volSlider.addEventListener('input', () => {
+    masterVolume = parseFloat(volSlider.value) / 100;
+    volValueEl.textContent = volSlider.value;
+    if (masterGain) masterGain.gain.value = masterVolume;
+  });
+  settingsBtn.addEventListener('touchstart', (e) => { initAudio(); e.preventDefault(); settingsOpen ? closeSettings() : openSettings(); }, { passive: false });
+  settingsBtn.addEventListener('click', () => { settingsOpen ? closeSettings() : openSettings(); });
+  settingsCloseEl.addEventListener('touchstart', (e) => { e.preventDefault(); closeSettings(); }, { passive: false });
+  settingsCloseEl.addEventListener('click', () => closeSettings());
+  notebookCloseEl.addEventListener('touchstart', (e) => { e.preventDefault(); closeNotebook(); }, { passive: false });
+  notebookCloseEl.addEventListener('click', () => closeNotebook());
+  codeCloseEl.addEventListener('touchstart', (e) => { e.preventDefault(); closeCode(); }, { passive: false });
+  codeCloseEl.addEventListener('click', () => closeCode());
+  minigameCancelEl.addEventListener('touchstart', (e) => { e.preventDefault(); cancelMinigame(); }, { passive: false });
+  minigameCancelEl.addEventListener('click', () => cancelMinigame());
+  moleHoles.forEach((hole, i) => {
+    hole.addEventListener('touchstart', (e) => { e.preventDefault(); hitHole(i); }, { passive: false });
+    hole.addEventListener('click', () => hitHole(i));
+  });
+
+  function hitStairQte() {
+    if (!stairsQteActive) return;
+    stairsQteActive = false;
+    stairQteEl.style.display = 'none';
+    showMessage('nice');
+  }
+  stairQteEl.addEventListener('touchstart', (e) => { e.preventDefault(); hitStairQte(); }, { passive: false });
+  stairQteEl.addEventListener('click', () => hitStairQte());
+
+  interactPromptEl.addEventListener('touchstart', (e) => { e.preventDefault(); tryInteract(); }, { passive: false });
+  interactPromptEl.addEventListener('click', () => tryInteract());
+
+  // ---------- touch drag-to-look ----------
+  let dragId = null, lastDragX = 0, lastDragY = 0;
+  lookLayer.addEventListener('touchstart', (e) => {
+    initAudio();
+    const t = e.changedTouches[0];
+    dragId = t.identifier;
+    lastDragX = t.clientX; lastDragY = t.clientY;
+    e.preventDefault();
+  }, { passive: false });
+  lookLayer.addEventListener('touchmove', (e) => {
+    if (movementPaused()) return;
+    for (const t of e.changedTouches) {
+      if (t.identifier === dragId) {
+        const dx = t.clientX - lastDragX, dy = t.clientY - lastDragY;
+        yaw -= dx * TOUCH_LOOK_SENS;
+        pitch -= dy * TOUCH_LOOK_SENS;
+        pitch = Math.max(-PITCH_LIMIT, Math.min(PITCH_LIMIT, pitch));
+        lastDragX = t.clientX; lastDragY = t.clientY;
+      }
+    }
+    e.preventDefault();
+  }, { passive: false });
+  function endDrag(e) {
+    for (const t of e.changedTouches) { if (t.identifier === dragId) dragId = null; }
+  }
+  lookLayer.addEventListener('touchend', endDrag);
+  lookLayer.addEventListener('touchcancel', endDrag);
+
+  // ---------- d-pad ----------
+  function makeNoiseDataURL(size, base, variance) {
+    const c = document.createElement('canvas');
+    c.width = c.height = size;
+    const ctx = c.getContext('2d');
+    const img = ctx.createImageData(size, size);
+    for (let i = 0; i < img.data.length; i += 4) {
+      const v = Math.max(0, Math.min(255, base + (Math.random() - 0.5) * variance * 2));
+      img.data[i] = v; img.data[i + 1] = v; img.data[i + 2] = v; img.data[i + 3] = 255;
+    }
+    ctx.putImageData(img, 0, 0);
+    return c.toDataURL();
+  }
+  const dpadNoiseURL = makeNoiseDataURL(48, 74, 24);
+  document.querySelectorAll('.dpad-btn, #settingsBtn').forEach((btn) => {
+    btn.style.backgroundImage = `linear-gradient(155deg, rgba(255,255,255,0.10), rgba(0,0,0,0.4)), url(${dpadNoiseURL})`;
+    btn.style.backgroundSize = 'cover, 48px 48px';
+    btn.style.backgroundBlendMode = 'overlay, normal';
+  });
+
+  const dpad = { up: false, down: false, left: false, right: false };
+  function attachHoldButton(el, key) {
+    let tid = null;
+    function within(t) {
+      const r = el.getBoundingClientRect();
+      return t.clientX >= r.left && t.clientX <= r.right && t.clientY >= r.top && t.clientY <= r.bottom;
+    }
+    function down() { initAudio(); dpad[key] = true; el.classList.add('active'); }
+    function up() { dpad[key] = false; el.classList.remove('active'); }
+    el.addEventListener('touchstart', (e) => {
+      const t = e.changedTouches[0];
+      tid = t.identifier;
+      down();
+      e.preventDefault();
+    }, { passive: false });
+    el.addEventListener('touchmove', (e) => {
+      for (const t of e.changedTouches) {
+        if (t.identifier === tid) { if (within(t)) down(); else up(); }
+      }
+      e.preventDefault();
+    }, { passive: false });
+    function end(e) {
+      for (const t of e.changedTouches) { if (t.identifier === tid) { tid = null; up(); } }
+    }
+    el.addEventListener('touchend', end);
+    el.addEventListener('touchcancel', end);
+  }
+  attachHoldButton(document.getElementById('dpad-up'), 'up');
+  attachHoldButton(document.getElementById('dpad-down'), 'down');
+  attachHoldButton(document.getElementById('dpad-left'), 'left');
+  attachHoldButton(document.getElementById('dpad-right'), 'right');
+
+  // ---------- main loop ----------
+  const clock = new THREE.Clock();
+  let currentDarkness = 0;
+  let currentTension = 0;
+  let heartbeatTimer = 0;
+
+  function animate() {
+    requestAnimationFrame(animate);
+    const dt = Math.min(clock.getDelta(), 0.05);
+
+    if (!movementPaused()) {
+      let inZ = 0, inX = 0;
+      if (keys['KeyW'] || keys['ArrowUp'] || dpad.up) inZ += 1;
+      if (keys['KeyS'] || keys['ArrowDown'] || dpad.down) inZ -= 1;
+      if (keys['KeyD'] || keys['ArrowRight'] || dpad.right) inX += 1;
+      if (keys['KeyA'] || keys['ArrowLeft'] || dpad.left) inX -= 1;
+      const inLen = Math.hypot(inX, inZ);
+      if (inLen > 1) { inX /= inLen; inZ /= inLen; }
+
+      camera.rotation.set(pitch, yaw, 0);
+
+      const fx = -Math.sin(yaw), fz = -Math.cos(yaw);
+      const rx = Math.cos(yaw), rz = -Math.sin(yaw);
+      const mdx = (fx * inZ + rx * inX) * MOVE_SPEED * dt;
+      const mdz = (fz * inZ + rz * inX) * MOVE_SPEED * dt;
+
+      const p2 = camera.position;
+      if (!collides(p2.x + mdx, p2.z)) p2.x += mdx;
+      if (!collides(p2.x, p2.z + mdz)) p2.z += mdz;
+    }
+    const pos = camera.position;
+
+    // key pickups
+    if (redKeyGroup) {
+      const kdx = pos.x - redKeyGroup.position.x, kdz = pos.z - redKeyGroup.position.z;
+      if (kdx * kdx + kdz * kdz < PICKUP_RADIUS * PICKUP_RADIUS) {
+        inventory.add('key_red');
+        scene.remove(redKeyGroup);
+        redKeyGroup = null;
+        redKeyArrows.forEach((a) => scene.remove(a));
+        redKeyArrows.length = 0;
+        showMessage('red key acquired');
+        updateInventoryHud();
+      } else {
+        redKeyGroup.rotation.y += dt * 1.2;
+        redKeyGroup.position.y = keyBaseY + Math.sin(performance.now() * 0.0022) * 0.08;
+      }
+    }
+    if (blueKeyGroup) {
+      const kdx = pos.x - blueKeyGroup.position.x, kdz = pos.z - blueKeyGroup.position.z;
+      if (kdx * kdx + kdz * kdz < PICKUP_RADIUS * PICKUP_RADIUS) {
+        inventory.add('key_blue');
+        scene.remove(blueKeyGroup);
+        blueKeyGroup = null;
+        blueKeyArrows.forEach((a) => scene.remove(a));
+        blueKeyArrows.length = 0;
+        showMessage('blue key acquired');
+        updateInventoryHud();
+      } else {
+        blueKeyGroup.rotation.y += dt * 1.2;
+        blueKeyGroup.position.y = keyBaseY + Math.sin(performance.now() * 0.0022 + 2) * 0.08;
+      }
+    }
+
+    // nearest interactable
+    if (movementPaused()) {
+      interactPromptEl.style.display = 'none';
+      currentInteractTarget = null;
+    } else {
+      let target = null, targetRef = null, bestD = Infinity;
+      function consider(kind, mesh, ref) {
+        const dx = pos.x - mesh.position.x, dz = pos.z - mesh.position.z;
+        const d2v = dx * dx + dz * dz;
+        if (d2v < INTERACT_RADIUS * INTERACT_RADIUS && d2v < bestD) { bestD = d2v; target = kind; targetRef = ref; }
+      }
+      if (!door1State.open && !door1State.opening && inventory.has('key_red')) consider('door1', door1Mesh, null);
+      if (!door2State.open && !door2State.opening && inventory.has('key_blue')) consider('door2', door2Mesh, null);
+      if (!notebookOpen) consider('notebook', notebookMesh, null);
+      if (!codeOpen) consider('code', paperMesh, null);
+      for (const d of utilityDoors) {
+        if (d.state.open || d.state.opening) continue;
+        consider(d.type, d.mesh, d);
+      }
+      currentInteractTarget = target;
+      currentInteractRef = targetRef;
+      interactPromptEl.classList.toggle('locked', target === 'locked');
+      interactPromptEl.style.display = target ? 'block' : 'none';
+      if (target === 'door1' || target === 'door2') {
+        interactPromptEl.textContent = isTouch ? 'tap — open door' : 'press e — open door';
+      } else if (target === 'minigame') {
+        interactPromptEl.textContent = isTouch ? 'tap — pick lock' : 'press e — pick lock';
+      } else if (target === 'notebook') {
+        interactPromptEl.textContent = isTouch ? 'tap — read notebook' : 'press e — read notebook';
+      } else if (target === 'code') {
+        interactPromptEl.textContent = isTouch ? 'tap — read paper' : 'press e — read paper';
+      } else if (target === 'locked') {
+        interactPromptEl.textContent = 'locked';
+      }
+    }
+
+    // door animations
+    if (door1State.opening) {
+      door1State.t += dt / DOOR_DURATION;
+      const tt = Math.min(door1State.t, 1);
+      door1Mesh.position.y = THREE.MathUtils.lerp(WALL_H / 2, -WALL_H / 2, tt);
+      if (tt >= 1) { door1State.opening = false; door1State.open = true; }
+    }
+    if (door2State.opening) {
+      door2State.t += dt / DOOR_DURATION;
+      const tt = Math.min(door2State.t, 1);
+      door2Mesh.position.y = THREE.MathUtils.lerp(WALL_H / 2, -WALL_H / 2, tt);
+      if (tt >= 1) { door2State.opening = false; door2State.open = true; startStairsSequence(); }
+    }
+    for (const d of utilityDoors) {
+      if (d.state.opening) {
+        d.state.t += dt / DOOR_DURATION;
+        const tt = Math.min(d.state.t, 1);
+        d.mesh.position.y = THREE.MathUtils.lerp(WALL_H / 2, -WALL_H / 2, tt);
+        if (tt >= 1) { d.state.opening = false; d.state.open = true; }
+      }
+    }
+
+    // monster chase (keeps hunting through the lock-picking minigame — only true menus pause it)
+    if (door1State.open && !uiPaused() && !stairsActive) {
+      pathRecomputeTimer -= dt;
+      if (pathRecomputeTimer <= 0) {
+        pathRecomputeTimer = PATH_RECOMPUTE_INTERVAL;
+        const mc = worldToCell2(monster.position.x, monster.position.z);
+        const pc = worldToCell2(pos.x, pos.z);
+        const cellPath = findPath(maze2, SIZE2, mc.cx, mc.cz, pc.cx, pc.cz);
+        monsterPath = cellPath.map((c) => ({
+          x: offsetX2 + c.x * CELL + CELL / 2,
+          z: offsetZ2 + c.y * CELL + CELL / 2
+        }));
+      }
+      if (monsterPath.length) {
+        const wp = monsterPath[0];
+        const dx = wp.x - monster.position.x, dz = wp.z - monster.position.z;
+        const d = Math.hypot(dx, dz);
+        const step = MONSTER_SPEED * dt;
+        if (d < step) {
+          monster.position.x = wp.x; monster.position.z = wp.z;
+          monsterPath.shift();
+        } else {
+          monster.position.x += dx / d * step;
+          monster.position.z += dz / d * step;
+        }
+      }
+      monster.position.y = 1.5 + Math.sin(performance.now() * 0.003) * 0.08;
+
+      const pdx = pos.x - monster.position.x, pdz = pos.z - monster.position.z;
+      if (pdx * pdx + pdz * pdz < CATCH_RADIUS * CATCH_RADIUS) die();
+
+      if (audioCtx) {
+        const distToMonster = Math.hypot(pdx, pdz);
+        const canSeeMonster = distToMonster < DANGER_RADIUS && hasLineOfSight(pos.x, pos.z, monster.position.x, monster.position.z);
+        const rawFactor = canSeeMonster ? Math.max(0, Math.min(1, 1 - distToMonster / DANGER_RADIUS)) : 0;
+        const proximityFactor = Math.pow(rawFactor, 0.55); // front-loaded curve: audible well before it's right on top of you
+        currentTension += (proximityFactor - currentTension) * Math.min(1, dt * 3);
+        if (tensionGain) tensionGain.gain.value = currentTension * 0.32;
+        if (tensionLFO) tensionLFO.frequency.value = 1.4 + currentTension * 4.5;
+
+        heartbeatTimer -= dt;
+        if (currentTension > 0.1 && heartbeatTimer <= 0) {
+          playHeartbeatThump(0.14 + currentTension * 0.32);
+          heartbeatTimer = Math.max(0.3, 0.9 - currentTension * 0.55);
+        }
+      }
+    } else if (audioCtx && tensionGain && !stairsActive) {
+      currentTension += (0 - currentTension) * Math.min(1, dt * 1.5);
+      tensionGain.gain.value = currentTension * 0.32;
+    }
+
+    // stairs-escape sequence: free movement in the test box, timer-based progress, look-back penalty, QTEs
+    if (stairsActive && !stairsEnded) {
+      let a = yaw % (Math.PI * 2);
+      if (a > Math.PI) a -= Math.PI * 2;
+      if (a < -Math.PI) a += Math.PI * 2;
+      const lookingBack = Math.abs(a) > (LOOKBACK_ANGLE_DEG * Math.PI / 180);
+
+      let rateMult = lookingBack ? LOOKBACK_RATE_MULT : 1;
+      if (stairsPenaltyTimer > 0) {
+        stairsPenaltyTimer -= dt;
+        rateMult *= STAIR_QTE_FAIL_MULT;
+      }
+
+      stairsProgress += dt * rateMult;
+      stairsGap = Math.max(0, Math.min(STAIR_GAP_MAX, stairsGap + (rateMult - 1) * dt));
+
+      const backX = Math.sin(yaw), backZ = Math.cos(yaw);
+      const entDist = 1.4 + (STAIR_GAP_MAX - stairsGap) / STAIR_GAP_MAX * 3.2;
+      stairEntity.position.set(pos.x + backX * entDist, 1.5, pos.z + backZ * entDist);
+
+      if (stairsGap <= 0) {
+        stairsEnded = true;
+        die();
+      }
+
+      if (!stairsQteActive) {
+        stairsQteNextIn -= dt;
+        if (stairsQteNextIn <= 0) {
+          stairsQteActive = true;
+          stairsQteWindowLeft = STAIR_QTE_WINDOW;
+          stairQteEl.textContent = isTouch ? 'tap now' : 'press space';
+          stairQteEl.style.display = 'block';
+        }
+      } else {
+        stairsQteWindowLeft -= dt;
+        if (stairsQteWindowLeft <= 0) {
+          stairsQteActive = false;
+          stairQteEl.style.display = 'none';
+          stairsPenaltyTimer = STAIR_QTE_FAIL_DURATION;
+          showMessage('stumbled');
+          stairsQteNextIn = STAIR_QTE_MIN_INTERVAL + Math.random() * (STAIR_QTE_MAX_INTERVAL - STAIR_QTE_MIN_INTERVAL);
+        }
+      }
+
+      if (audioCtx) {
+        const gapFactor = 1 - stairsGap / STAIR_GAP_MAX;
+        currentTension += (gapFactor - currentTension) * Math.min(1, dt * 3);
+        if (tensionGain) tensionGain.gain.value = currentTension * 0.32;
+        if (tensionLFO) tensionLFO.frequency.value = 1.4 + currentTension * 4.5;
+        heartbeatTimer -= dt;
+        if (currentTension > 0.1 && heartbeatTimer <= 0) {
+          playHeartbeatThump(0.14 + currentTension * 0.32);
+          heartbeatTimer = Math.max(0.3, 0.9 - currentTension * 0.55);
+        }
+      }
+
+      if (!stairsEnded && stairsProgress >= STAIR_DURATION) {
+        stairsEnded = true;
+        finishStairsSequence();
+      }
+    }
+
+    // random dark zones: dim ambient + flashlight based on which cell the player occupies
+    let darknessTarget = 0;
+    if (pos.z < offsetZ2) {
+      const cx = Math.max(0, Math.min(SIZE1 - 1, Math.floor(pos.x / CELL)));
+      const cz = Math.max(0, Math.min(SIZE1 - 1, Math.floor(pos.z / CELL)));
+      darknessTarget = darkness1[cz][cx];
+    } else {
+      const cx = Math.max(0, Math.min(SIZE2 - 1, Math.floor((pos.x - offsetX2) / CELL)));
+      const cz = Math.max(0, Math.min(SIZE2 - 1, Math.floor((pos.z - offsetZ2) / CELL)));
+      darknessTarget = darkness2[cz][cx];
+    }
+    currentDarkness += (darknessTarget - currentDarkness) * Math.min(1, dt * 1.2);
+    const darkFactor = 1 - currentDarkness * 0.82;
+    ambient.intensity = AMBIENT_BASE * darkFactor;
+
+    // message fade
+    if (msgTimer > 0) {
+      msgTimer -= dt;
+      if (msgTimer <= 0) messageEl.style.opacity = '0';
+    }
+
+    // camera shake (door rumble)
+    if (shakeTime > 0) {
+      shakeTime -= dt;
+      camera.position.y = EYE_HEIGHT + (Math.random() - 0.5) * 0.05 * Math.max(shakeTime, 0) / 0.4;
+    } else if (!dead) {
+      camera.position.y = EYE_HEIGHT;
+    }
+
+    // flicker (scaled by the local darkness factor)
+    flashlight.intensity = (1.1 + Math.sin(performance.now() * 0.008) * 0.15 + (Math.random() - 0.5) * 0.25) * darkFactor;
+
+    renderer.render(scene, camera);
+  }
+  updateInventoryHud();
+  animate();
+})();
+</script>
+</body>
+</html>
