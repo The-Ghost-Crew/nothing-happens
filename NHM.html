@@ -75,16 +75,19 @@
   #message {
     position: fixed; top: 18%; left: 50%;
     transform: translate(-50%, -50%);
+    width: 86%;
+    max-width: 480px;
+    text-align: center;
     color: rgba(220,220,220,0.9);
     font-family: 'Courier New', monospace;
     font-size: 13px;
-    letter-spacing: 0.15em;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
     opacity: 0;
     transition: opacity 0.4s ease;
     z-index: 12;
     pointer-events: none;
-    white-space: nowrap;
+    white-space: normal;
   }
 
   #interactPrompt {
@@ -175,7 +178,7 @@
       0 2px 3px rgba(0,0,0,0.55);
   }
 
-  #settingsPanel, #notebookPanel, #minigamePanel, #codePanel {
+  #settingsPanel, #notebookPanel, #minigamePanel, #codePanel, #keypadPanel, #notePanel {
     position: fixed; top: 50%; left: 50%;
     transform: translate(-50%, -50%);
     display: none;
@@ -191,7 +194,9 @@
   }
   #settingsPanel { width: 260px; }
   #notebookPanel { width: 320px; max-height: 70vh; color: rgba(215,215,205,0.92); }
+  #notePanel { width: 300px; max-height: 60vh; color: rgba(215,215,205,0.92); }
   #minigamePanel { width: 240px; align-items: center; }
+  #keypadPanel { width: 240px; align-items: center; }
   #codePanel { width: 240px; align-items: center; }
 
   #codeDigits {
@@ -208,7 +213,7 @@
     text-align: center;
   }
 
-  #settingsTitle, #notebookTitle, #minigameTitle, #codeTitle {
+  #settingsTitle, #notebookTitle, #minigameTitle, #codeTitle, #keypadTitle, #noteTitle {
     font-size: 13px;
     letter-spacing: 0.15em;
     text-transform: uppercase;
@@ -217,55 +222,13 @@
     padding-bottom: 8px;
     width: 100%;
   }
-  #sensLabel, #volLabel, #audioToggleLabel {
+  #sensLabel, #volLabel {
     font-size: 11px;
     letter-spacing: 0.06em;
     text-transform: uppercase;
     color: rgba(190,190,190,0.8);
   }
   #sensSlider, #volSlider { width: 100%; accent-color: #999; }
-  .settings-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  .toggle-switch {
-    position: relative;
-    display: inline-block;
-    width: 44px;
-    height: 24px;
-    cursor: pointer;
-    flex-shrink: 0;
-  }
-  .toggle-switch input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-    position: absolute;
-  }
-  .toggle-track {
-    position: absolute;
-    inset: 0;
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.24);
-    border-radius: 12px;
-    transition: background 0.15s ease;
-  }
-  .toggle-thumb {
-    position: absolute;
-    top: 2px; left: 2px;
-    width: 18px; height: 18px;
-    border-radius: 50%;
-    background: rgba(190,190,190,0.85);
-    transition: transform 0.15s ease, background 0.15s ease;
-  }
-  .toggle-switch input:checked + .toggle-track {
-    background: rgba(255,255,255,0.22);
-  }
-  .toggle-switch input:checked + .toggle-track .toggle-thumb {
-    transform: translateX(20px);
-    background: rgba(238,238,238,0.95);
-  }
 
   #notebookText {
     font-size: 12.5px;
@@ -278,7 +241,17 @@
   #notebookText p { margin: 0 0 12px 0; }
   #notebookText .torn { color: rgba(170,170,170,0.55); font-style: italic; }
 
-  #settingsClose, #notebookClose, #minigameCancel, #codeClose {
+  #noteText {
+    font-size: 12.5px;
+    line-height: 1.6;
+    letter-spacing: 0.01em;
+    overflow-y: auto;
+    max-height: 40vh;
+    padding-right: 6px;
+  }
+  #noteText p { margin: 0 0 10px 0; }
+
+  #settingsClose, #notebookClose, #minigameCancel, #codeClose, #keypadCancel, #noteClose {
     align-self: flex-end;
     padding: 6px 14px;
     font-size: 11px;
@@ -288,7 +261,7 @@
     border-radius: 4px;
     cursor: pointer;
   }
-  #settingsClose:active, #notebookClose:active, #minigameCancel:active, #codeClose:active { background: rgba(255,255,255,0.12); }
+  #settingsClose:active, #notebookClose:active, #minigameCancel:active, #codeClose:active, #keypadCancel:active, #noteClose:active { background: rgba(255,255,255,0.12); }
 
   #minigameGrid {
     display: grid;
@@ -315,6 +288,34 @@
     text-transform: uppercase;
     color: rgba(190,190,190,0.8);
   }
+
+  #keypadDisplay {
+    font-size: 26px;
+    letter-spacing: 0.3em;
+    text-align: center;
+    color: rgba(230,230,230,0.95);
+    padding: 4px 0;
+  }
+  #keypadGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 54px);
+    grid-template-rows: repeat(3, 46px);
+    gap: 8px;
+  }
+  .keypad-btn {
+    display: flex; align-items: center; justify-content: center;
+    background: #141414;
+    border: 1px solid rgba(255,255,255,0.16);
+    border-radius: 6px;
+    color: rgba(215,215,215,0.9);
+    font-family: 'Courier New', monospace;
+    font-size: 15px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    cursor: pointer;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), inset 0 -2px 4px rgba(0,0,0,0.6);
+  }
+  .keypad-btn:active { background: rgba(255,255,255,0.14); }
 
   #deathOverlay {
     position: fixed; inset: 0;
@@ -351,22 +352,18 @@
     position: fixed; top: 45%; left: 50%;
     transform: translate(-50%, -50%);
     display: none;
-    padding: 14px 26px;
-    background: rgba(255,255,255,0.12);
-    border: 1px solid rgba(255,255,255,0.4);
-    border-radius: 6px;
-    color: rgba(240,240,240,0.95);
-    font-family: 'Courier New', monospace;
-    font-size: 15px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
+    width: 76px; height: 76px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,255,255,0.32), rgba(255,255,255,0.06));
+    border: 2px solid rgba(255,255,255,0.7);
+    box-shadow: 0 0 20px rgba(255,255,255,0.35);
     z-index: 42;
     cursor: pointer;
     animation: qtePulse 0.5s ease-in-out infinite alternate;
   }
   @keyframes qtePulse {
     from { transform: translate(-50%, -50%) scale(1); }
-    to { transform: translate(-50%, -50%) scale(1.08); }
+    to { transform: translate(-50%, -50%) scale(1.1); }
   }
   #winMessage {
     position: fixed; top: 50%; left: 50%;
@@ -393,7 +390,7 @@
 <div id="vignette"></div>
 <div id="message"></div>
 <div id="interactPrompt">press e — interact</div>
-<div id="clickPrompt">click to begin<br><span style="opacity:0.6;font-size:11px">(enables mouse look + sound)</span></div>
+<div id="clickPrompt">click to enable mouse look</div>
 <div id="tapToBegin">tap to begin<br><span style="opacity:0.6;font-size:11px">(enables sound)</span></div>
 <div id="lookLayer"></div>
 <div id="dpad">
@@ -423,13 +420,6 @@
   <div id="settingsTitle">settings</div>
   <label id="sensLabel" for="sensSlider">look sensitivity: <span id="sensValue"></span>/10</label>
   <input type="range" id="sensSlider" step="0.0005">
-  <div class="settings-row">
-    <label id="audioToggleLabel" for="audioToggle">audio: <span id="audioToggleValue">on</span></label>
-    <label class="toggle-switch">
-      <input type="checkbox" id="audioToggle" checked>
-      <span class="toggle-track"><span class="toggle-thumb"></span></span>
-    </label>
-  </div>
   <label id="volLabel" for="volSlider">music volume: <span id="volValue"></span>%</label>
   <input type="range" id="volSlider" min="0" max="100" step="5">
   <div id="settingsClose">close</div>
@@ -450,6 +440,11 @@
   <div id="codeHint">four digits, scratched in a hurried hand. no lock is mentioned.</div>
   <div id="codeClose">close</div>
 </div>
+<div id="notePanel">
+  <div id="noteTitle">a note</div>
+  <div id="noteText"></div>
+  <div id="noteClose">close</div>
+</div>
 <div id="minigamePanel">
   <div id="minigameTitle">pick the lock</div>
   <div id="minigameGrid">
@@ -460,9 +455,20 @@
   <div id="minigameStatus">hits: 0 / 7</div>
   <div id="minigameCancel">run</div>
 </div>
+<div id="keypadPanel">
+  <div id="keypadTitle">enter code</div>
+  <div id="keypadDisplay">- - - -</div>
+  <div id="keypadGrid">
+    <div class="keypad-btn" data-d="1">1</div><div class="keypad-btn" data-d="2">2</div><div class="keypad-btn" data-d="3">3</div>
+    <div class="keypad-btn" data-d="4">4</div><div class="keypad-btn" data-d="5">5</div><div class="keypad-btn" data-d="6">6</div>
+    <div class="keypad-btn" data-d="7">7</div><div class="keypad-btn" data-d="8">8</div><div class="keypad-btn" data-d="9">9</div>
+    <div class="keypad-btn" id="keypadClear">clr</div><div class="keypad-btn" data-d="0">0</div><div class="keypad-btn" id="keypadEnter">ent</div>
+  </div>
+  <div id="keypadCancel">cancel</div>
+</div>
 <div id="deathOverlay"></div>
 <div id="fadeOverlay"></div>
-<div id="stairQte">press space</div>
+<div id="stairQte"></div>
 <div id="winMessage">nothing is here.<br>congratulations.</div>
 <div id="deathMessage"></div>
 
@@ -504,6 +510,10 @@
   const STAIR_ORIGIN_X = 400;
   const STAIR_ORIGIN_Z = 400;
   const STAIR_DURATION = 20;
+  const STAIR_SLOPE_DEG = 22;
+  const RAMP_WIDTH = 3.5;
+  const RAMP_LENGTH = 70;
+  const BASE_STAIR_SPEED = 3.2;
   const LOOKBACK_ANGLE_DEG = 100;
   const LOOKBACK_RATE_MULT = 0.5;
   const STAIR_QTE_MIN_INTERVAL = 3.2;
@@ -513,6 +523,7 @@
   const STAIR_QTE_FAIL_DURATION = 2.4;
   const STAIR_GAP_MAX = 6;
   const STAIR_GAP_START = 4;
+  const MIN_SHORTCUT_VALUE = 14; // a lockable door must save at least this many tiles of detour to be worth picking
 
   // ---------- renderer / scene / camera ----------
   const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -772,10 +783,12 @@
         const cell = cellsData[cz][cx];
         const skipN = opts.skipNorth && opts.skipNorth(cx, cz);
         const skipS = opts.skipSouth && opts.skipSouth(cx, cz);
+        const skipW = opts.skipWest && opts.skipWest(cx, cz);
+        const skipE = opts.skipEast && opts.skipEast(cx, cz);
         if (cell.walls.N && !skipN) addNS(cx, cz, cz > 0);
-        if (cell.walls.W) addWE(cx, cz, cx > 0);
+        if (cell.walls.W && !skipW) addWE(cx, cz, cx > 0);
         if (cz === size - 1 && cell.walls.S && !skipS) addNS(cx, cz + 1, false);
-        if (cx === size - 1 && cell.walls.E) addWE(cx + 1, cz, false);
+        if (cx === size - 1 && cell.walls.E && !skipE) addWE(cx + 1, cz, false);
       }
     }
     return { internal, allWalls };
@@ -783,27 +796,56 @@
 
   const wallBoxes = [];
 
-  // ---------- stairs-escape prototype: an isolated test box, not yet part of the maze geography ----------
-  function buildStairTestBox() {
+  // ---------- stairs-escape prototype: a sloped ramp leading to a small destination room ----------
+  const slopeRad = STAIR_SLOPE_DEG * Math.PI / 180;
+  const travelDir = new THREE.Vector3(0, Math.sin(slopeRad), -Math.cos(slopeRad));
+  const rampHorizontalRun = RAMP_LENGTH * Math.cos(slopeRad);
+  const rampBaseX = STAIR_ORIGIN_X + STAIR_SPAN / 2;
+  const rampTopZ = STAIR_ORIGIN_Z + STAIR_SPAN;
+  const rampBaseZ = rampTopZ + rampHorizontalRun;
+  const rampBase = new THREE.Vector3(rampBaseX, 0, rampBaseZ);
+  const rampTop = rampBase.clone().addScaledVector(travelDir, RAMP_LENGTH);
+  const rampCenter = rampBase.clone().addScaledVector(travelDir, RAMP_LENGTH / 2);
+
+  const rampFloor = new THREE.Mesh(new THREE.PlaneGeometry(RAMP_WIDTH, RAMP_LENGTH), floorMaterial);
+  rampFloor.rotation.x = -Math.PI / 2 + slopeRad;
+  rampFloor.position.copy(rampCenter);
+  scene.add(rampFloor);
+
+  function buildRampSideWall(sideSign) {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(WALL_T, RAMP_LENGTH, STAIR_WALL_H), wallMaterial);
+    mesh.rotation.x = -Math.PI / 2 + slopeRad;
+    mesh.position.set(
+      rampCenter.x + sideSign * (RAMP_WIDTH / 2 + WALL_T / 2),
+      rampCenter.y + Math.cos(slopeRad) * (STAIR_WALL_H / 2),
+      rampCenter.z + Math.sin(slopeRad) * (STAIR_WALL_H / 2)
+    );
+    scene.add(mesh);
+    // visual only — the player auto-advances up the centerline during this sequence and never strafes into these
+  }
+  buildRampSideWall(-1);
+  buildRampSideWall(1);
+
+  // destination room at the top of the ramp — open on the south side where the ramp arrives
+  function buildStairTestBox(baseY) {
     const span = STAIR_SPAN;
     const specs = [
       { w: span + WALL_T, h: STAIR_WALL_H, d: WALL_T, x: STAIR_ORIGIN_X + span / 2, z: STAIR_ORIGIN_Z },
-      { w: span + WALL_T, h: STAIR_WALL_H, d: WALL_T, x: STAIR_ORIGIN_X + span / 2, z: STAIR_ORIGIN_Z + span },
       { w: WALL_T, h: STAIR_WALL_H, d: span + WALL_T, x: STAIR_ORIGIN_X, z: STAIR_ORIGIN_Z + span / 2 },
       { w: WALL_T, h: STAIR_WALL_H, d: span + WALL_T, x: STAIR_ORIGIN_X + span, z: STAIR_ORIGIN_Z + span / 2 }
     ];
     for (const s of specs) {
       const mesh = new THREE.Mesh(new THREE.BoxGeometry(s.w, s.h, s.d), wallMaterial);
-      mesh.position.set(s.x, s.h / 2, s.z);
+      mesh.position.set(s.x, baseY + s.h / 2, s.z);
       scene.add(mesh);
       wallBoxes.push(new THREE.Box3().setFromObject(mesh));
     }
     const floor = new THREE.Mesh(new THREE.PlaneGeometry(span, span), floorMaterial);
     floor.rotation.x = -Math.PI / 2;
-    floor.position.set(STAIR_ORIGIN_X + span / 2, 0, STAIR_ORIGIN_Z + span / 2);
+    floor.position.set(STAIR_ORIGIN_X + span / 2, baseY, STAIR_ORIGIN_Z + span / 2);
     scene.add(floor);
   }
-  buildStairTestBox();
+  buildStairTestBox(rampTop.y);
 
   const stairEntityMaterial = new THREE.SpriteMaterial({ map: eyeTexture, fog: true });
   const stairEntity = new THREE.Sprite(stairEntityMaterial);
@@ -839,7 +881,7 @@
   wallBoxes.push(door1Box);
   const door1State = { open: false, opening: false, t: 0 };
 
-  // ---------- maze 2 (15x15, beyond the exit door) ----------
+  // ---------- maze 2 (beyond the exit door) ----------
   const maze2 = generateMaze(SIZE2, STRAIGHT_BIAS);
   braidMaze(maze2, SIZE2, BRAID_CHANCE);
   const dist2 = bfsDistances(maze2, SIZE2, 0, 0);
@@ -847,8 +889,22 @@
   const offsetX2 = exitCX * CELL;
   const offsetZ2 = SIZE1 * CELL;
 
+  // find the exit cell on maze2's OWN boundary (farthest from its entrance) — door2 (blue key) goes here
+  let door2Best = -1, door2Cell = { x: SIZE2 - 1, y: SIZE2 - 1, side: 'S' };
+  for (let x = 0; x < SIZE2; x++) {
+    if (dist2[0][x] > door2Best) { door2Best = dist2[0][x]; door2Cell = { x, y: 0, side: 'N' }; }
+    if (dist2[SIZE2 - 1][x] > door2Best) { door2Best = dist2[SIZE2 - 1][x]; door2Cell = { x, y: SIZE2 - 1, side: 'S' }; }
+  }
+  for (let y = 0; y < SIZE2; y++) {
+    if (dist2[y][0] > door2Best) { door2Best = dist2[y][0]; door2Cell = { x: 0, y, side: 'W' }; }
+    if (dist2[y][SIZE2 - 1] > door2Best) { door2Best = dist2[y][SIZE2 - 1]; door2Cell = { x: SIZE2 - 1, y, side: 'E' }; }
+  }
+
   const { internal: internal2, allWalls: allWalls2 } = buildMazeWalls(maze2, SIZE2, CELL, offsetX2, offsetZ2, wallMaterial, wallBoxes, {
-    skipNorth: (cx, cz) => cx === 0 && cz === 0
+    skipNorth: (cx, cz) => (cx === 0 && cz === 0) || (door2Cell.side === 'N' && cx === door2Cell.x && cz === door2Cell.y),
+    skipSouth: (cx, cz) => door2Cell.side === 'S' && cx === door2Cell.x && cz === door2Cell.y,
+    skipWest: (cx, cz) => door2Cell.side === 'W' && cx === door2Cell.x && cz === door2Cell.y,
+    skipEast: (cx, cz) => door2Cell.side === 'E' && cx === door2Cell.x && cz === door2Cell.y
   });
 
   const span2 = SIZE2 * CELL;
@@ -861,25 +917,66 @@
   floor2.position.set(offsetX2 + span2 / 2, 0, offsetZ2 + span2 / 2);
   scene.add(floor2);
 
-  // door 2: internal shortcut inside maze2 — requires the blue key. nothing lies beyond it yet.
-  const door2Edge = internal2[Math.floor(Math.random() * internal2.length)];
-  scene.remove(door2Edge.mesh);
-  {
-    const idx = wallBoxes.indexOf(door2Edge.box);
-    if (idx > -1) wallBoxes.splice(idx, 1);
-  }
-  let door2Mesh;
-  if (door2Edge.orientation === 'NS') {
+  // door 2: on maze2's own boundary — requires the blue key
+  const door2Outward = { N: { dx: 0, dz: -1 }, S: { dx: 0, dz: 1 }, W: { dx: -1, dz: 0 }, E: { dx: 1, dz: 0 } }[door2Cell.side];
+  let door2Mesh, door2WorldX, door2WorldZ;
+  if (door2Cell.side === 'N' || door2Cell.side === 'S') {
     door2Mesh = new THREE.Mesh(new THREE.BoxGeometry(CELL + WALL_T, WALL_H, WALL_T), doorMaterial);
-    door2Mesh.position.set(offsetX2 + door2Edge.cx * CELL + CELL / 2, WALL_H / 2, offsetZ2 + door2Edge.cz * CELL);
+    door2WorldX = offsetX2 + door2Cell.x * CELL + CELL / 2;
+    door2WorldZ = offsetZ2 + (door2Cell.side === 'N' ? door2Cell.y * CELL : (door2Cell.y + 1) * CELL);
   } else {
     door2Mesh = new THREE.Mesh(new THREE.BoxGeometry(WALL_T, WALL_H, CELL + WALL_T), doorMaterial);
-    door2Mesh.position.set(offsetX2 + door2Edge.cx * CELL, WALL_H / 2, offsetZ2 + door2Edge.cz * CELL + CELL / 2);
+    door2WorldX = offsetX2 + (door2Cell.side === 'W' ? door2Cell.x * CELL : (door2Cell.x + 1) * CELL);
+    door2WorldZ = offsetZ2 + door2Cell.y * CELL + CELL / 2;
   }
+  door2Mesh.position.set(door2WorldX, WALL_H / 2, door2WorldZ);
   scene.add(door2Mesh);
   let door2Box = new THREE.Box3().setFromObject(door2Mesh);
   wallBoxes.push(door2Box);
   const door2State = { open: false, opening: false, t: 0 };
+
+  // a short vestibule beyond door2, ending in door3 — door3 is code-gated and is what actually starts the stairs
+  const vestX = door2WorldX + door2Outward.dx * CELL / 2;
+  const vestZ = door2WorldZ + door2Outward.dz * CELL / 2;
+  const door3WorldX = door2WorldX + door2Outward.dx * CELL;
+  const door3WorldZ = door2WorldZ + door2Outward.dz * CELL;
+  let door3Mesh;
+  if (door2Cell.side === 'N' || door2Cell.side === 'S') {
+    const sideWallGeo = new THREE.BoxGeometry(WALL_T, WALL_H, CELL + WALL_T);
+    const wallL = new THREE.Mesh(sideWallGeo, wallMaterial);
+    wallL.position.set(door2WorldX - CELL / 2, WALL_H / 2, vestZ);
+    scene.add(wallL);
+    wallBoxes.push(new THREE.Box3().setFromObject(wallL));
+    const wallR = new THREE.Mesh(sideWallGeo, wallMaterial);
+    wallR.position.set(door2WorldX + CELL / 2, WALL_H / 2, vestZ);
+    scene.add(wallR);
+    wallBoxes.push(new THREE.Box3().setFromObject(wallR));
+    door3Mesh = new THREE.Mesh(new THREE.BoxGeometry(CELL + WALL_T, WALL_H, WALL_T), doorMaterialMini);
+    door3Mesh.position.set(door2WorldX, WALL_H / 2, door3WorldZ);
+  } else {
+    const sideWallGeo = new THREE.BoxGeometry(CELL + WALL_T, WALL_H, WALL_T);
+    const wallL = new THREE.Mesh(sideWallGeo, wallMaterial);
+    wallL.position.set(vestX, WALL_H / 2, door2WorldZ - CELL / 2);
+    scene.add(wallL);
+    wallBoxes.push(new THREE.Box3().setFromObject(wallL));
+    const wallR = new THREE.Mesh(sideWallGeo, wallMaterial);
+    wallR.position.set(vestX, WALL_H / 2, door2WorldZ + CELL / 2);
+    scene.add(wallR);
+    wallBoxes.push(new THREE.Box3().setFromObject(wallR));
+    door3Mesh = new THREE.Mesh(new THREE.BoxGeometry(WALL_T, WALL_H, CELL + WALL_T), doorMaterialMini);
+    door3Mesh.position.set(door3WorldX, WALL_H / 2, door2WorldZ);
+  }
+  scene.add(door3Mesh);
+  const door3Glow = new THREE.PointLight(0xcccccc, 0.4, 1.8, 2);
+  door3Glow.position.set(0, 0.15, 0);
+  door3Mesh.add(door3Glow);
+  let door3Box = new THREE.Box3().setFromObject(door3Mesh);
+  wallBoxes.push(door3Box);
+  const door3State = { open: false, opening: false, t: 0 };
+  const vestFloor = new THREE.Mesh(new THREE.PlaneGeometry(CELL, CELL), floorMaterial2);
+  vestFloor.rotation.x = -Math.PI / 2;
+  vestFloor.position.set(vestX, 0, vestZ);
+  scene.add(vestFloor);
 
   // ---------- extra utility doors (locked / minigame) scattered through maze2 ----------
   const utilityDoors = [];
@@ -906,8 +1003,18 @@
     }
     utilityDoors.push({ mesh, box, state: { open: false, opening: false, t: 0 }, type });
   }
-  const remainingInternal2 = internal2.filter((e) => e !== door2Edge);
-  const shuffledInternal2 = shuffle(remainingInternal2);
+  function edgeAdjacentCells(edge) {
+    if (edge.orientation === 'NS') return [{ x: edge.cx, y: edge.cz }, { x: edge.cx, y: edge.cz - 1 }];
+    return [{ x: edge.cx, y: edge.cz }, { x: edge.cx - 1, y: edge.cz }];
+  }
+  function edgeShortcutValue(mazeCells, size, edge) {
+    const [a, b] = edgeAdjacentCells(edge);
+    if (a.y < 0 || a.y >= size || b.y < 0 || b.y >= size || a.x < 0 || a.x >= size || b.x < 0 || b.x >= size) return 0;
+    const dist = bfsDistances(mazeCells, size, a.x, a.y);
+    return dist[b.y][b.x];
+  }
+  const meaningfulEdges = internal2.filter((e) => edgeShortcutValue(maze2, SIZE2, e) >= MIN_SHORTCUT_VALUE);
+  const shuffledInternal2 = shuffle(meaningfulEdges.length >= (EXTRA_LOCKED_DOORS + EXTRA_MINIGAME_DOORS) ? meaningfulEdges : internal2);
   const lockedEdges = shuffledInternal2.slice(0, EXTRA_LOCKED_DOORS);
   const minigameEdges = shuffledInternal2.slice(EXTRA_LOCKED_DOORS, EXTRA_LOCKED_DOORS + EXTRA_MINIGAME_DOORS);
   for (const e of lockedEdges) buildUtilityDoor(e, 'locked');
@@ -1153,12 +1260,16 @@
     wallBoxes.push(new THREE.Box3().setFromObject(cairn));
   }
 
-  {
-    const usedEdgeMeshes = new Set([door2Edge.mesh, ...lockedEdges.map((e) => e.mesh), ...minigameEdges.map((e) => e.mesh)]);
-    const internalMeshSet = new Set(internal2.map((e) => e.mesh));
-    const decorableWalls = shuffle(allWalls2.filter((w) => internalMeshSet.has(w.mesh) && !usedEdgeMeshes.has(w.mesh)));
-    for (let i = 0; i < 8 && i < decorableWalls.length; i++) placeTallyMarks(decorableWalls[i]);
+  const usedEdgeMeshes = new Set([...lockedEdges.map((e) => e.mesh), ...minigameEdges.map((e) => e.mesh)]);
+  const internalMeshSet = new Set(internal2.map((e) => e.mesh));
+  const decorableWalls = shuffle(allWalls2.filter((w) => internalMeshSet.has(w.mesh) && !usedEdgeMeshes.has(w.mesh)));
+  let decorablePoolIdx = 0;
+  function nextDecorableWalls(n) {
+    const slice = decorableWalls.slice(decorablePoolIdx, decorablePoolIdx + n);
+    decorablePoolIdx += n;
+    return slice;
   }
+  for (const w of nextDecorableWalls(8)) placeTallyMarks(w);
 
   // ---------- wayfinding arrows: spray-painted marks on walls guiding toward the red key, blue key, and code paper ----------
   const dirRotationY = { E: 0, S: -Math.PI / 2, W: Math.PI, N: Math.PI / 2 };
@@ -1286,8 +1397,265 @@
     if (exitArrowsPlaced) return;
     if (!(inventory.has('key_blue') && codeRead)) return;
     exitArrowsPlaced = true;
-    placeWayfindingArrows(maze2, SIZE2, 0, 0, door2Edge.cx, door2Edge.cz, offsetX2, offsetZ2, exitArrows, 0.3);
+    placeWayfindingArrows(maze2, SIZE2, 0, 0, door2Cell.x, door2Cell.y, offsetX2, offsetZ2, exitArrows, 0.3);
     setTimeout(() => showMessage('you sense a way out'), 2400);
+  }
+
+  // ---------- readable loose notes (shared by the smiley's note and journal entries on furniture) ----------
+  const looseNotes = [];
+  function placeLooseNote(x, y, z, text) {
+    const mat = new THREE.MeshStandardMaterial({ color: 0xc9c5b9, roughness: 0.95, side: THREE.DoubleSide });
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(0.26, 0.19), mat);
+    mesh.rotation.x = -Math.PI / 2;
+    mesh.rotation.z = Math.random() * Math.PI * 2;
+    mesh.position.set(x, y, z);
+    scene.add(mesh);
+    looseNotes.push({ mesh, text });
+  }
+
+  function buildEtchingDecal(canvas, planeW, planeH) {
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.needsUpdate = true;
+    const mat = new THREE.MeshStandardMaterial({ map: texture, transparent: true, roughness: 1, metalness: 0, side: THREE.DoubleSide });
+    return new THREE.Mesh(new THREE.PlaneGeometry(planeW, planeH), mat);
+  }
+  function mountOnEdge(mesh, wallRec, y) {
+    const side = wallRec.orientation === 'NS' ? 'N' : 'W';
+    const p = wallMountPosition(wallRec.cx, wallRec.cz, side, offsetX2, offsetZ2);
+    mesh.rotation.y = wallFaceRotationY[side];
+    mesh.position.set(p.x, y, p.z);
+    scene.add(mesh);
+    return p;
+  }
+
+  // ---------- the smiling symbol (original design) + its note ----------
+  function makeSmileyFaceCanvas() {
+    const w = 160, h = 160;
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    const ctx = c.getContext('2d');
+    ctx.strokeStyle = 'rgba(233,233,228,0.9)';
+    ctx.fillStyle = 'rgba(233,233,228,0.9)';
+    ctx.lineWidth = 5;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.ellipse(w * 0.34, h * 0.36, 13, 19, -0.3, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(w * 0.60, h * 0.46);
+    ctx.lineTo(w * 0.69, h * 0.40);
+    ctx.lineTo(w * 0.65, h * 0.50);
+    ctx.lineTo(w * 0.74, h * 0.52);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(w * 0.27, h * 0.62);
+    ctx.lineTo(w * 0.37, h * 0.73);
+    ctx.lineTo(w * 0.46, h * 0.64);
+    ctx.lineTo(w * 0.55, h * 0.75);
+    ctx.lineTo(w * 0.63, h * 0.65);
+    ctx.lineTo(w * 0.72, h * 0.71);
+    ctx.stroke();
+    function drip(x, y, len) {
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + (Math.random() - 0.5) * 4, y + len);
+      ctx.stroke();
+    }
+    drip(w * 0.34, h * 0.40, 20 + Math.random() * 10);
+    drip(w * 0.66, h * 0.50, 16 + Math.random() * 10);
+    drip(w * 0.40, h * 0.71, 22 + Math.random() * 12);
+    drip(w * 0.58, h * 0.71, 18 + Math.random() * 10);
+    for (let i = 0; i < 90; i++) {
+      ctx.globalAlpha = Math.random() * 0.25;
+      ctx.beginPath();
+      ctx.arc(Math.random() * w, Math.random() * h, Math.random() * 1.4 + 0.3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    return c;
+  }
+
+  const RED_JOHN_NOTE_TEXT = "Found it again today. Third time this month... always a different wall, always the same stupid grin.\n\nI keep asking why. Why draw a face at all, why make it smile, why leave it for me to find like some kind of joke. It isn't chalk... chalk doesn't run. But it looks like chalk, dry and white and dusty, and yet underneath, the drips are wet. Always wet. I touched one once. I won't do that again.\n\nIt smells like blood. It looks like nothing. White doesn't have a smell. White doesn't rot. This does both, and I don't have a word for what that means... except that something wants me to notice it noticing me.\n\nSomeone... something... finds this funny. I don't.";
+
+  function placeSmileyAndNote(wallRec) {
+    const decal = buildEtchingDecal(makeSmileyFaceCanvas(), 0.85, 0.85);
+    mountOnEdge(decal, wallRec, 1.55);
+    const noteMat = new THREE.MeshStandardMaterial({ color: 0xc9c5b9, roughness: 0.95, side: THREE.DoubleSide });
+    const noteMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.32, 0.24), noteMat);
+    mountOnEdge(noteMesh, wallRec, 0.9);
+    looseNotes.push({ mesh: noteMesh, text: RED_JOHN_NOTE_TEXT });
+  }
+
+  // ---------- other wall etchings ----------
+  function makeMapEtchingCanvas() {
+    const w = 140, h = 140;
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    const ctx = c.getContext('2d');
+    ctx.strokeStyle = 'rgba(200,200,195,0.55)';
+    ctx.lineWidth = 2;
+    const cells = 5, cw = w / cells, ch = h / cells;
+    for (let gy = 0; gy < cells; gy++) {
+      for (let gx = 0; gx < cells; gx++) {
+        if (Math.random() < 0.6) {
+          ctx.beginPath();
+          ctx.moveTo(gx * cw + 2, gy * ch + ch / 2);
+          ctx.lineTo(gx * cw + cw - 2, gy * ch + ch / 2);
+          ctx.stroke();
+        }
+        if (Math.random() < 0.6) {
+          ctx.beginPath();
+          ctx.moveTo(gx * cw + cw / 2, gy * ch + 2);
+          ctx.lineTo(gx * cw + cw / 2, gy * ch + ch - 2);
+          ctx.stroke();
+        }
+      }
+    }
+    for (let i = 0; i < 3; i++) {
+      ctx.beginPath();
+      const sx = Math.random() * w, sy = Math.random() * h;
+      ctx.moveTo(sx, sy);
+      for (let j = 0; j < 4; j++) ctx.lineTo(sx + (Math.random() - 0.5) * 40, sy + (Math.random() - 0.5) * 40);
+      ctx.stroke();
+    }
+    return c;
+  }
+  function makeHandprintsCanvas() {
+    const w = 150, h = 110;
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = 'rgba(225,225,220,0.5)';
+    function hand(x, y, scale) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.scale(scale, scale);
+      ctx.beginPath();
+      ctx.ellipse(0, 10, 14, 18, 0, 0, Math.PI * 2);
+      ctx.fill();
+      for (let i = -2; i <= 2; i++) {
+        ctx.beginPath();
+        ctx.ellipse(i * 7, -12 - Math.abs(i) * 2, 4, 14, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+    hand(w * 0.3, h * 0.6, 0.8);
+    hand(w * 0.55, h * 0.35, 1.0);
+    hand(w * 0.75, h * 0.65, 0.65);
+    return c;
+  }
+  function makeRepeatedWordCanvas() {
+    const w = 170, h = 130;
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    const ctx = c.getContext('2d');
+    ctx.textBaseline = 'middle';
+    for (let i = 0; i < 5; i++) {
+      ctx.save();
+      ctx.translate(10 + Math.random() * i * 1.5, 18 + i * 22);
+      ctx.rotate((Math.random() - 0.5) * 0.06 * i);
+      ctx.font = (18 + i * 2) + 'px monospace';
+      ctx.fillStyle = `rgba(220,220,215,${0.85 - i * 0.09})`;
+      ctx.fillText('OUT', 0, 0);
+      ctx.restore();
+    }
+    return c;
+  }
+  function makeSpiralCanvas() {
+    const w = 130, h = 130;
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    const ctx = c.getContext('2d');
+    ctx.strokeStyle = 'rgba(215,215,210,0.6)';
+    ctx.lineWidth = 2;
+    const cx = w / 2, cy = h / 2;
+    for (let pass = 0; pass < 3; pass++) {
+      ctx.beginPath();
+      let a = 0, r = 4;
+      ctx.moveTo(cx + r * Math.cos(a), cy + r * Math.sin(a));
+      for (a = 0; a < Math.PI * 7; a += 0.15) {
+        r = 4 + a * 2.4 + (Math.random() - 0.5) * 1.5;
+        ctx.lineTo(cx + r * Math.cos(a + pass * 0.3), cy + r * Math.sin(a + pass * 0.3));
+      }
+      ctx.stroke();
+    }
+    return c;
+  }
+  function makeCalendarGridCanvas() {
+    const w = 140, h = 140;
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    const ctx = c.getContext('2d');
+    ctx.strokeStyle = 'rgba(210,210,205,0.6)';
+    ctx.lineWidth = 1.5;
+    const cols = 5, rows = 5, cw = w / cols, ch = h / rows;
+    const skip = Math.floor(Math.random() * cols * rows);
+    let idx = 0;
+    for (let gy = 0; gy < rows; gy++) {
+      for (let gx = 0; gx < cols; gx++) {
+        const x = gx * cw, y = gy * ch;
+        ctx.strokeRect(x + 2, y + 2, cw - 4, ch - 4);
+        if (idx !== skip) {
+          ctx.beginPath();
+          ctx.moveTo(x + 4, y + 4); ctx.lineTo(x + cw - 4, y + ch - 4);
+          ctx.moveTo(x + cw - 4, y + 4); ctx.lineTo(x + 4, y + ch - 4);
+          ctx.stroke();
+        } else {
+          ctx.beginPath();
+          ctx.arc(x + cw / 2, y + ch / 2, Math.min(cw, ch) / 2 - 6, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        idx++;
+      }
+    }
+    return c;
+  }
+  function placeEtching(wallRec, type) {
+    let canvas, pw, ph;
+    if (type === 'map') { canvas = makeMapEtchingCanvas(); pw = 1.0; ph = 1.0; }
+    else if (type === 'hands') { canvas = makeHandprintsCanvas(); pw = 1.1; ph = 0.8; }
+    else if (type === 'word') { canvas = makeRepeatedWordCanvas(); pw = 1.2; ph = 0.9; }
+    else if (type === 'spiral') { canvas = makeSpiralCanvas(); pw = 0.9; ph = 0.9; }
+    else { canvas = makeCalendarGridCanvas(); pw = 1.0; ph = 1.0; }
+    const decal = buildEtchingDecal(canvas, pw, ph);
+    mountOnEdge(decal, wallRec, 1.2 + Math.random() * 0.4);
+  }
+
+  placeSmileyAndNote(nextDecorableWalls(1)[0]);
+  for (const w of nextDecorableWalls(2)) placeEtching(w, 'map');
+  for (const w of nextDecorableWalls(2)) placeEtching(w, 'hands');
+  for (const w of nextDecorableWalls(2)) placeEtching(w, 'word');
+  for (const w of nextDecorableWalls(2)) placeEtching(w, 'spiral');
+  for (const w of nextDecorableWalls(2)) placeEtching(w, 'calendar');
+
+  // ---------- journal entries on additional furniture ----------
+  const journalTexts = [
+    "Day... I've stopped counting the days, they don't add up right anymore. Twice now I've counted forward and arrived at a number smaller than before.",
+    "I sat here so long deciding which way to go that I forgot which way I'd already been. There were three paths. Now there are five. I don't think the maze grew. I think I finally started seeing all of it.",
+    "the walls dont mind me anymore. i used to hate them. now i think they might be the only thing that hasnt lied to me. yet.",
+    "It watches from the walls now, not just from behind me. A face, drawn in something that isn't chalk. I asked it why it was smiling. It never answers. It only waits for me to ask again.",
+    "...not real not real not real..."
+  ];
+  for (let i = 0; i < journalTexts.length; i++) {
+    const c = randomCellAvoiding(SIZE2, occupiedCells2, 2.0);
+    if (!c) break;
+    occupiedCells2.push(c);
+    const baseX = offsetX2 + c.x * CELL + CELL / 2 + (Math.random() - 0.5) * 1.0;
+    const baseZ = offsetZ2 + c.y * CELL + CELL / 2 + (Math.random() - 0.5) * 1.0;
+    if (i % 2 === 0) {
+      const desk = buildTable(baseX, baseZ);
+      scene.add(desk);
+      desk.updateMatrixWorld(true);
+      wallBoxes.push(new THREE.Box3().setFromObject(desk));
+      placeLooseNote(baseX + 0.12, 0.795, baseZ, journalTexts[i]);
+    } else {
+      const chair = buildChair(baseX, baseZ, Math.random() * Math.PI * 2);
+      scene.add(chair);
+      chair.updateMatrixWorld(true);
+      wallBoxes.push(new THREE.Box3().setFromObject(chair));
+      placeLooseNote(baseX, 0.48, baseZ, journalTexts[i]);
+    }
   }
 
   // ---------- inventory ----------
@@ -1302,10 +1670,10 @@
   // ---------- messages ----------
   const messageEl = document.getElementById('message');
   let msgTimer = 0;
-  function showMessage(text) {
+  function showMessage(text, duration) {
     messageEl.textContent = text;
     messageEl.style.opacity = '1';
-    msgTimer = 2.2;
+    msgTimer = duration || 2.2;
   }
 
   // ---------- death ----------
@@ -1341,6 +1709,27 @@
   let stairsQteWindowLeft = 0;
   let stairsQteNextIn = 3;
 
+  function tryRelockPointer() {
+    if (isTouch) return;
+    renderer.domElement.requestPointerLock();
+    setTimeout(() => {
+      if (document.pointerLockElement !== renderer.domElement) {
+        clickPrompt.style.display = 'flex';
+      }
+    }, 250);
+  }
+
+  function positionStairQte() {
+    const margin = 60;
+    const bottomSafe = isTouch ? 260 : 50;
+    const topSafe = 70;
+    const w = window.innerWidth, h = window.innerHeight;
+    const x = margin + Math.random() * Math.max(20, w - margin * 2);
+    const y = topSafe + Math.random() * Math.max(20, h - topSafe - bottomSafe);
+    stairQteEl.style.left = x + 'px';
+    stairQteEl.style.top = y + 'px';
+  }
+
   function startStairsSequence() {
     if (stairsTriggered) return;
     stairsTriggered = true;
@@ -1353,7 +1742,7 @@
       stairsPenaltyTimer = 0;
       stairsQteActive = false;
       stairsQteNextIn = 3 + Math.random() * 1.5;
-      camera.position.set(STAIR_ORIGIN_X + STAIR_SPAN / 2, EYE_HEIGHT, STAIR_ORIGIN_Z + STAIR_SPAN / 2);
+      camera.position.set(rampBase.x, rampBase.y + EYE_HEIGHT, rampBase.z);
       yaw = 0; pitch = 0;
       stairEntity.visible = true;
       showMessage('run.');
@@ -1376,26 +1765,57 @@
   let audioCtx = null;
   let audioStarted = false;
   let masterGain = null;
-  let masterVolume = 0.7;
-  let audioEnabled = true;
+  let masterVolume = 0.5;
+  const STATIC_BASE_GAIN = 0.09;
+  const DRONE_BASE_GAIN = 0.099;
+  const TENSION_GAIN_MULT = 0.288;
+  const AMBIENT_FADE_IN = 2.5;
+  let staticCrackleTimer = 0.5;
+  const FOOTSTEP_INTERVAL = 0.42;
+  let footstepTimer = 0;
   let droneGain = null;
+  let noiseGain = null;
   let tensionGain = null;
   let tensionLFO = null;
 
+  function unlockAudioAttempt() {
+    if (!audioCtx) return;
+    try {
+      const unlockBuffer = audioCtx.createBuffer(1, 1, 22050);
+      const unlockSource = audioCtx.createBufferSource();
+      unlockSource.buffer = unlockBuffer;
+      unlockSource.connect(audioCtx.destination);
+      unlockSource.start(0);
+    } catch (err) { /* ignore */ }
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume().catch(() => {});
+    }
+  }
+  function ensureAudioContext() {
+    if (audioCtx) return;
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      masterGain = audioCtx.createGain();
+      masterGain.gain.value = masterVolume;
+      masterGain.connect(audioCtx.destination);
+    } catch (err) { audioCtx = null; }
+  }
+  function primeAudio() {
+    // creates the context + masterGain if needed, and retries the iOS unlock on every gesture —
+    // this alone is enough for footsteps, independent of whether the ambient soundscape has started
+    ensureAudioContext();
+    unlockAudioAttempt();
+  }
   function initAudio() {
+    primeAudio();
+    if (!audioCtx) return;
     if (audioStarted) return;
     audioStarted = true;
     try {
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      if (audioCtx.state === 'suspended') audioCtx.resume();
-
-      masterGain = audioCtx.createGain();
-      masterGain.gain.value = audioEnabled ? masterVolume : 0;
-      masterGain.connect(audioCtx.destination);
-
-      // low ambient drone, two detuned oscillators for unease
+      // low ambient drone, two detuned oscillators for unease — fades in rather than popping in at full volume
       droneGain = audioCtx.createGain();
-      droneGain.gain.value = 0.2;
+      droneGain.gain.value = 0;
+      droneGain.gain.linearRampToValueAtTime(DRONE_BASE_GAIN, audioCtx.currentTime + AMBIENT_FADE_IN);
       droneGain.connect(masterGain);
 
       const drone1 = audioCtx.createOscillator();
@@ -1431,15 +1851,17 @@
       noiseSource.buffer = noiseBuffer;
       noiseSource.loop = true;
       const noiseFilter = audioCtx.createBiquadFilter();
-      noiseFilter.type = 'lowpass';
-      noiseFilter.frequency.value = 2600;
-      noiseFilter.Q.value = 0.5;
-      const noiseGain = audioCtx.createGain();
-      noiseGain.gain.value = 0.11;
+      noiseFilter.type = 'highpass';
+      noiseFilter.frequency.value = 900;
+      noiseFilter.Q.value = 0.4;
+      noiseGain = audioCtx.createGain();
+      noiseGain.gain.value = 0;
+      noiseGain.gain.linearRampToValueAtTime(STATIC_BASE_GAIN, audioCtx.currentTime + AMBIENT_FADE_IN);
       noiseSource.connect(noiseFilter);
       noiseFilter.connect(noiseGain);
       noiseGain.connect(masterGain);
       noiseSource.start();
+      staticCrackleTimer = AMBIENT_FADE_IN + 0.8;
 
       // tension layer: dissonant near-unison saws, silent until the entity closes in
       tensionGain = audioCtx.createGain();
@@ -1448,13 +1870,13 @@
 
       const t1 = audioCtx.createOscillator();
       t1.type = 'sawtooth';
-      t1.frequency.value = 110;
+      t1.frequency.value = 58;
       t1.connect(tensionGain);
       t1.start();
 
       const t2 = audioCtx.createOscillator();
       t2.type = 'sawtooth';
-      t2.frequency.value = 116;
+      t2.frequency.value = 61;
       t2.connect(tensionGain);
       t2.start();
 
@@ -1466,7 +1888,7 @@
       tensionLFOGain.connect(tensionGain.gain);
       tensionLFO.start();
     } catch (err) {
-      audioCtx = null;
+      // ambient soundscape failed to build, but audioCtx/masterGain (and footsteps) still work
     }
   }
 
@@ -1485,6 +1907,60 @@
     g.connect(masterGain);
     osc.start(t);
     osc.stop(t + 0.3);
+  }
+
+  function playKeyPickupSound() {
+    if (!audioCtx || !masterGain) return;
+    const t = audioCtx.currentTime;
+    const notes = [660, 880, 1100];
+    notes.forEach((freq, i) => {
+      const osc = audioCtx.createOscillator();
+      osc.type = 'triangle';
+      osc.frequency.value = freq;
+      const g = audioCtx.createGain();
+      const start = t + i * 0.07;
+      g.gain.setValueAtTime(0.0001, start);
+      g.gain.exponentialRampToValueAtTime(0.16, start + 0.015);
+      g.gain.exponentialRampToValueAtTime(0.0001, start + 0.22);
+      osc.connect(g);
+      g.connect(masterGain);
+      osc.start(start);
+      osc.stop(start + 0.24);
+    });
+  }
+
+  function playFootstep() {
+    if (!audioCtx || !masterGain) return;
+    const t = audioCtx.currentTime;
+    const pitchVar = 0.9 + Math.random() * 0.2;
+    const osc = audioCtx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(90 * pitchVar, t);
+    osc.frequency.exponentialRampToValueAtTime(45 * pitchVar, t + 0.08);
+    const oscGain = audioCtx.createGain();
+    oscGain.gain.setValueAtTime(0.0001, t);
+    oscGain.gain.exponentialRampToValueAtTime(0.11, t + 0.008);
+    oscGain.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
+    osc.connect(oscGain);
+    oscGain.connect(masterGain);
+    osc.start(t);
+    osc.stop(t + 0.13);
+
+    const bufferSize = Math.floor(audioCtx.sampleRate * 0.07);
+    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+    const noiseSrc = audioCtx.createBufferSource();
+    noiseSrc.buffer = buffer;
+    const noiseFilt = audioCtx.createBiquadFilter();
+    noiseFilt.type = 'lowpass';
+    noiseFilt.frequency.value = 1800;
+    const noiseG = audioCtx.createGain();
+    noiseG.gain.value = 0.055;
+    noiseSrc.connect(noiseFilt);
+    noiseFilt.connect(noiseG);
+    noiseG.connect(masterGain);
+    noiseSrc.start(t);
   }
 
   // ---------- collision ----------
@@ -1552,7 +2028,8 @@
     shakeTime = 0.4;
     inventory.delete('key_red');
     updateInventoryHud();
-    showMessage('door unlocked');
+    initAudio();
+    showMessage("you are hearing a constant pain that won't dissipate", 3.5);
   }
   function openDoor2() {
     if (door2State.open || door2State.opening) return;
@@ -1564,6 +2041,15 @@
     inventory.delete('key_blue');
     updateInventoryHud();
     showMessage('door unlocked');
+  }
+  function openDoor3() {
+    if (door3State.open || door3State.opening) return;
+    door3State.opening = true;
+    door3State.t = 0;
+    const idx = wallBoxes.indexOf(door3Box);
+    if (idx > -1) wallBoxes.splice(idx, 1);
+    shakeTime = 0.4;
+    showMessage('code accepted');
   }
   function openUtilityDoor(doorObj) {
     if (doorObj.state.open || doorObj.state.opening) return;
@@ -1577,8 +2063,10 @@
     if (minigameOpen) return;
     if (currentInteractTarget === 'door1') openDoor1();
     else if (currentInteractTarget === 'door2') openDoor2();
+    else if (currentInteractTarget === 'door3') openKeypad();
     else if (currentInteractTarget === 'notebook') openNotebook();
     else if (currentInteractTarget === 'code') openCode();
+    else if (currentInteractTarget === 'loosenote') openNoteReading(currentInteractRef.text);
     else if (currentInteractTarget === 'minigame') startMinigame(currentInteractRef);
   }
 
@@ -1588,7 +2076,9 @@
   let minigameOpen = false;
   let codeOpen = false;
   let codeRead = false;
-  function uiPaused() { return settingsOpen || notebookOpen || codeOpen || dead; }
+  let keypadOpen = false;
+  let noteOpen = false;
+  function uiPaused() { return settingsOpen || notebookOpen || codeOpen || keypadOpen || noteOpen || dead; }
   function movementPaused() { return uiPaused() || minigameOpen || stairsEnded; }
 
   function openCode() {
@@ -1607,6 +2097,52 @@
   function closeCode() {
     codeOpen = false;
     codePanel.style.display = 'none';
+    if (!isTouch && document.pointerLockElement !== renderer.domElement) clickPrompt.style.display = 'flex';
+  }
+
+  let keypadInput = '';
+  function updateKeypadDisplay() {
+    const digits = (keypadInput + '----').slice(0, 4).split('');
+    keypadDisplayEl.textContent = digits.map((c) => (c === '-' ? '-' : c)).join(' ');
+  }
+  function openKeypad() {
+    keypadOpen = true;
+    keypadInput = '';
+    updateKeypadDisplay();
+    keypadPanel.style.display = 'flex';
+    if (document.pointerLockElement) document.exitPointerLock();
+    clickPrompt.style.display = 'none';
+  }
+  function closeKeypad() {
+    keypadOpen = false;
+    keypadPanel.style.display = 'none';
+    if (!isTouch && document.pointerLockElement !== renderer.domElement) clickPrompt.style.display = 'flex';
+  }
+  function keypadPressDigit(d) {
+    if (keypadInput.length < 4) { keypadInput += d; updateKeypadDisplay(); }
+  }
+  function keypadClearInput() { keypadInput = ''; updateKeypadDisplay(); }
+  function keypadSubmit() {
+    if (keypadInput === secretCode) {
+      closeKeypad();
+      openDoor3();
+    } else {
+      showMessage('incorrect code');
+      keypadInput = '';
+      updateKeypadDisplay();
+    }
+  }
+
+  function openNoteReading(text) {
+    noteOpen = true;
+    noteTextEl.innerHTML = text.split('\n\n').map((p) => '<p>' + p + '</p>').join('');
+    notePanel.style.display = 'flex';
+    if (document.pointerLockElement) document.exitPointerLock();
+    clickPrompt.style.display = 'none';
+  }
+  function closeNoteReading() {
+    noteOpen = false;
+    notePanel.style.display = 'none';
     if (!isTouch && document.pointerLockElement !== renderer.domElement) clickPrompt.style.display = 'flex';
   }
 
@@ -1699,16 +2235,20 @@
   // ---------- keyboard ----------
   const keys = {};
   window.addEventListener('keydown', (e) => {
-    initAudio();
+    primeAudio();
     keys[e.code] = true;
     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) e.preventDefault();
     if (dead) return;
     if (e.code === 'KeyE') tryInteract();
     if (e.code === 'KeyQ' && !minigameOpen) { settingsOpen ? closeSettings() : openSettings(); }
-    if (e.code === 'Space') hitStairQte();
+    if (keypadOpen) {
+      if (e.code.startsWith('Digit')) keypadPressDigit(e.code.slice(5));
+      else if (e.code === 'Backspace') keypadClearInput();
+      else if (e.code === 'Enter') keypadSubmit();
+      else if (e.code === 'Escape') closeKeypad();
+    }
   });
   window.addEventListener('keyup', (e) => { keys[e.code] = false; });
-  window.addEventListener('pointerdown', () => initAudio());
 
   // ---------- dom refs ----------
   const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
@@ -1729,8 +2269,6 @@
   const codeCloseEl = document.getElementById('codeClose');
   const volSlider = document.getElementById('volSlider');
   const volValueEl = document.getElementById('volValue');
-  const audioToggle = document.getElementById('audioToggle');
-  const audioToggleValueEl = document.getElementById('audioToggleValue');
   const minigamePanel = document.getElementById('minigamePanel');
   const minigameStatusEl = document.getElementById('minigameStatus');
   const minigameCancelEl = document.getElementById('minigameCancel');
@@ -1738,6 +2276,15 @@
   const fadeOverlayEl = document.getElementById('fadeOverlay');
   const stairQteEl = document.getElementById('stairQte');
   const winMessageEl = document.getElementById('winMessage');
+  const keypadPanel = document.getElementById('keypadPanel');
+  const keypadDisplayEl = document.getElementById('keypadDisplay');
+  const keypadClearEl = document.getElementById('keypadClear');
+  const keypadEnterEl = document.getElementById('keypadEnter');
+  const keypadCancelEl = document.getElementById('keypadCancel');
+  const keypadDigitBtns = Array.from(document.querySelectorAll('.keypad-btn[data-d]'));
+  const notePanel = document.getElementById('notePanel');
+  const noteTextEl = document.getElementById('noteText');
+  const noteCloseEl = document.getElementById('noteClose');
 
   if (isTouch) {
     hudEl.textContent = 'd-pad — move  ·  drag — look';
@@ -1745,17 +2292,11 @@
     dpadEl.style.display = 'grid';
     lookLayer.style.display = 'block';
     settingsBtn.style.display = 'flex';
-    const tapToBeginEl = document.getElementById('tapToBegin');
-    tapToBeginEl.style.display = 'flex';
-    tapToBeginEl.addEventListener('touchstart', (e) => {
-      e.preventDefault();
-      initAudio();
-      tapToBeginEl.style.display = 'none';
-    }, { passive: false, once: true });
   } else {
     hudEl.textContent = 'wasd / arrows — move  ·  mouse — look  ·  e — interact  ·  q — settings';
-    clickPrompt.addEventListener('click', () => { initAudio(); renderer.domElement.requestPointerLock(); });
+    clickPrompt.addEventListener('click', () => { renderer.domElement.requestPointerLock(); });
     document.addEventListener('pointerlockchange', () => {
+      if (stairsQteActive) { clickPrompt.style.display = 'none'; return; }
       clickPrompt.style.display = (document.pointerLockElement === renderer.domElement) ? 'none' : 'flex';
     });
     document.addEventListener('mousemove', (e) => {
@@ -1785,19 +2326,9 @@
   volSlider.addEventListener('input', () => {
     masterVolume = parseFloat(volSlider.value) / 100;
     volValueEl.textContent = volSlider.value;
-    if (masterGain && audioEnabled) masterGain.gain.value = masterVolume;
+    if (masterGain) masterGain.gain.value = masterVolume;
   });
-  audioToggle.addEventListener('change', () => {
-    audioEnabled = audioToggle.checked;
-    audioToggleValueEl.textContent = audioEnabled ? 'on' : 'off';
-    if (audioEnabled) {
-      initAudio();
-      if (masterGain) masterGain.gain.value = masterVolume;
-    } else if (masterGain) {
-      masterGain.gain.value = 0;
-    }
-  });
-  settingsBtn.addEventListener('touchstart', (e) => { initAudio(); e.preventDefault(); settingsOpen ? closeSettings() : openSettings(); }, { passive: false });
+  settingsBtn.addEventListener('touchstart', (e) => { e.preventDefault(); settingsOpen ? closeSettings() : openSettings(); }, { passive: false });
   settingsBtn.addEventListener('click', () => { settingsOpen ? closeSettings() : openSettings(); });
   settingsCloseEl.addEventListener('touchstart', (e) => { e.preventDefault(); closeSettings(); }, { passive: false });
   settingsCloseEl.addEventListener('click', () => closeSettings());
@@ -1805,6 +2336,20 @@
   notebookCloseEl.addEventListener('click', () => closeNotebook());
   codeCloseEl.addEventListener('touchstart', (e) => { e.preventDefault(); closeCode(); }, { passive: false });
   codeCloseEl.addEventListener('click', () => closeCode());
+
+  keypadDigitBtns.forEach((btn) => {
+    const d = btn.getAttribute('data-d');
+    btn.addEventListener('touchstart', (e) => { e.preventDefault(); keypadPressDigit(d); }, { passive: false });
+    btn.addEventListener('click', () => keypadPressDigit(d));
+  });
+  keypadClearEl.addEventListener('touchstart', (e) => { e.preventDefault(); keypadClearInput(); }, { passive: false });
+  keypadClearEl.addEventListener('click', () => keypadClearInput());
+  keypadEnterEl.addEventListener('touchstart', (e) => { e.preventDefault(); keypadSubmit(); }, { passive: false });
+  keypadEnterEl.addEventListener('click', () => keypadSubmit());
+  keypadCancelEl.addEventListener('touchstart', (e) => { e.preventDefault(); closeKeypad(); }, { passive: false });
+  keypadCancelEl.addEventListener('click', () => closeKeypad());
+  noteCloseEl.addEventListener('touchstart', (e) => { e.preventDefault(); closeNoteReading(); }, { passive: false });
+  noteCloseEl.addEventListener('click', () => closeNoteReading());
   minigameCancelEl.addEventListener('touchstart', (e) => { e.preventDefault(); cancelMinigame(); }, { passive: false });
   minigameCancelEl.addEventListener('click', () => cancelMinigame());
   moleHoles.forEach((hole, i) => {
@@ -1817,6 +2362,7 @@
     stairsQteActive = false;
     stairQteEl.style.display = 'none';
     showMessage('nice');
+    tryRelockPointer();
   }
   stairQteEl.addEventListener('touchstart', (e) => { e.preventDefault(); hitStairQte(); }, { passive: false });
   stairQteEl.addEventListener('click', () => hitStairQte());
@@ -1827,7 +2373,6 @@
   // ---------- touch drag-to-look ----------
   let dragId = null, lastDragX = 0, lastDragY = 0;
   lookLayer.addEventListener('touchstart', (e) => {
-    initAudio();
     const t = e.changedTouches[0];
     dragId = t.identifier;
     lastDragX = t.clientX; lastDragY = t.clientY;
@@ -1879,7 +2424,7 @@
       const r = el.getBoundingClientRect();
       return t.clientX >= r.left && t.clientX <= r.right && t.clientY >= r.top && t.clientY <= r.bottom;
     }
-    function down() { initAudio(); dpad[key] = true; el.classList.add('active'); }
+    function down() { primeAudio(); dpad[key] = true; el.classList.add('active'); }
     function up() { dpad[key] = false; el.classList.remove('active'); }
     el.addEventListener('touchstart', (e) => {
       const t = e.changedTouches[0];
@@ -1915,24 +2460,25 @@
     const dt = Math.min(clock.getDelta(), 0.05);
 
     if (!movementPaused()) {
-      let inZ = 0, inX = 0;
-      if (keys['KeyW'] || keys['ArrowUp'] || dpad.up) inZ += 1;
-      if (keys['KeyS'] || keys['ArrowDown'] || dpad.down) inZ -= 1;
-      if (keys['KeyD'] || keys['ArrowRight'] || dpad.right) inX += 1;
-      if (keys['KeyA'] || keys['ArrowLeft'] || dpad.left) inX -= 1;
-      const inLen = Math.hypot(inX, inZ);
-      if (inLen > 1) { inX /= inLen; inZ /= inLen; }
-
       camera.rotation.set(pitch, yaw, 0);
+      if (!stairsActive) {
+        let inZ = 0, inX = 0;
+        if (keys['KeyW'] || keys['ArrowUp'] || dpad.up) inZ += 1;
+        if (keys['KeyS'] || keys['ArrowDown'] || dpad.down) inZ -= 1;
+        if (keys['KeyD'] || keys['ArrowRight'] || dpad.right) inX += 1;
+        if (keys['KeyA'] || keys['ArrowLeft'] || dpad.left) inX -= 1;
+        const inLen = Math.hypot(inX, inZ);
+        if (inLen > 1) { inX /= inLen; inZ /= inLen; }
 
-      const fx = -Math.sin(yaw), fz = -Math.cos(yaw);
-      const rx = Math.cos(yaw), rz = -Math.sin(yaw);
-      const mdx = (fx * inZ + rx * inX) * MOVE_SPEED * dt;
-      const mdz = (fz * inZ + rz * inX) * MOVE_SPEED * dt;
+        const fx = -Math.sin(yaw), fz = -Math.cos(yaw);
+        const rx = Math.cos(yaw), rz = -Math.sin(yaw);
+        const mdx = (fx * inZ + rx * inX) * MOVE_SPEED * dt;
+        const mdz = (fz * inZ + rz * inX) * MOVE_SPEED * dt;
 
-      const p2 = camera.position;
-      if (!collides(p2.x + mdx, p2.z)) p2.x += mdx;
-      if (!collides(p2.x, p2.z + mdz)) p2.z += mdz;
+        const p2 = camera.position;
+        if (!collides(p2.x + mdx, p2.z)) p2.x += mdx;
+        if (!collides(p2.x, p2.z + mdz)) p2.z += mdz;
+      }
     }
     const pos = camera.position;
 
@@ -1945,6 +2491,7 @@
         redKeyGroup = null;
         redKeyArrows.forEach((a) => scene.remove(a));
         redKeyArrows.length = 0;
+        playKeyPickupSound();
         showMessage('red key acquired');
         updateInventoryHud();
       } else {
@@ -1960,6 +2507,7 @@
         blueKeyGroup = null;
         blueKeyArrows.forEach((a) => scene.remove(a));
         blueKeyArrows.length = 0;
+        playKeyPickupSound();
         showMessage('blue key acquired');
         updateInventoryHud();
         maybeRevealExitArrows();
@@ -1982,6 +2530,8 @@
       }
       if (!door1State.open && !door1State.opening && inventory.has('key_red')) consider('door1', door1Mesh, null);
       if (!door2State.open && !door2State.opening && inventory.has('key_blue')) consider('door2', door2Mesh, null);
+      if (!door3State.open && !door3State.opening && !keypadOpen) consider('door3', door3Mesh, null);
+      if (!noteOpen) { for (const n of looseNotes) consider('loosenote', n.mesh, n); }
       if (!notebookOpen) consider('notebook', notebookMesh, null);
       if (!codeOpen) consider('code', paperMesh, null);
       for (const d of utilityDoors) {
@@ -1994,12 +2544,16 @@
       interactPromptEl.style.display = target ? 'block' : 'none';
       if (target === 'door1' || target === 'door2') {
         interactPromptEl.textContent = isTouch ? 'tap — open door' : 'press e — open door';
+      } else if (target === 'door3') {
+        interactPromptEl.textContent = isTouch ? 'tap — enter code' : 'press e — enter code';
       } else if (target === 'minigame') {
         interactPromptEl.textContent = isTouch ? 'tap — pick lock' : 'press e — pick lock';
       } else if (target === 'notebook') {
         interactPromptEl.textContent = isTouch ? 'tap — read notebook' : 'press e — read notebook';
       } else if (target === 'code') {
         interactPromptEl.textContent = isTouch ? 'tap — read paper' : 'press e — read paper';
+      } else if (target === 'loosenote') {
+        interactPromptEl.textContent = isTouch ? 'tap — read note' : 'press e — read note';
       } else if (target === 'locked') {
         interactPromptEl.textContent = 'locked';
       }
@@ -2016,7 +2570,13 @@
       door2State.t += dt / DOOR_DURATION;
       const tt = Math.min(door2State.t, 1);
       door2Mesh.position.y = THREE.MathUtils.lerp(WALL_H / 2, -WALL_H / 2, tt);
-      if (tt >= 1) { door2State.opening = false; door2State.open = true; startStairsSequence(); }
+      if (tt >= 1) { door2State.opening = false; door2State.open = true; }
+    }
+    if (door3State.opening) {
+      door3State.t += dt / DOOR_DURATION;
+      const tt = Math.min(door3State.t, 1);
+      door3Mesh.position.y = THREE.MathUtils.lerp(WALL_H / 2, -WALL_H / 2, tt);
+      if (tt >= 1) { door3State.opening = false; door3State.open = true; startStairsSequence(); }
     }
     for (const d of utilityDoors) {
       if (d.state.opening) {
@@ -2064,21 +2624,21 @@
         const rawFactor = canSeeMonster ? Math.max(0, Math.min(1, 1 - distToMonster / DANGER_RADIUS)) : 0;
         const proximityFactor = Math.pow(rawFactor, 0.55); // front-loaded curve: audible well before it's right on top of you
         currentTension += (proximityFactor - currentTension) * Math.min(1, dt * 3);
-        if (tensionGain) tensionGain.gain.value = currentTension * 0.32;
+        if (tensionGain) tensionGain.gain.value = currentTension * TENSION_GAIN_MULT;
         if (tensionLFO) tensionLFO.frequency.value = 1.4 + currentTension * 4.5;
 
         heartbeatTimer -= dt;
         if (currentTension > 0.1 && heartbeatTimer <= 0) {
-          playHeartbeatThump(0.14 + currentTension * 0.32);
+          playHeartbeatThump(0.126 + currentTension * TENSION_GAIN_MULT);
           heartbeatTimer = Math.max(0.3, 0.9 - currentTension * 0.55);
         }
       }
     } else if (audioCtx && tensionGain && !stairsActive) {
       currentTension += (0 - currentTension) * Math.min(1, dt * 1.5);
-      tensionGain.gain.value = currentTension * 0.32;
+      tensionGain.gain.value = currentTension * TENSION_GAIN_MULT;
     }
 
-    // stairs-escape sequence: free movement in the test box, timer-based progress, look-back penalty, QTEs
+    // stairs-escape sequence: auto-advance up the ramp, timer-based progress, look-back penalty, QTEs
     if (stairsActive && !stairsEnded) {
       let a = yaw % (Math.PI * 2);
       if (a > Math.PI) a -= Math.PI * 2;
@@ -2091,12 +2651,12 @@
         rateMult *= STAIR_QTE_FAIL_MULT;
       }
 
+      camera.position.addScaledVector(travelDir, BASE_STAIR_SPEED * dt * rateMult);
       stairsProgress += dt * rateMult;
       stairsGap = Math.max(0, Math.min(STAIR_GAP_MAX, stairsGap + (rateMult - 1) * dt));
 
-      const backX = Math.sin(yaw), backZ = Math.cos(yaw);
       const entDist = 1.4 + (STAIR_GAP_MAX - stairsGap) / STAIR_GAP_MAX * 3.2;
-      stairEntity.position.set(pos.x + backX * entDist, 1.5, pos.z + backZ * entDist);
+      stairEntity.position.copy(camera.position).addScaledVector(travelDir, -entDist);
 
       if (stairsGap <= 0) {
         stairsEnded = true;
@@ -2108,8 +2668,11 @@
         if (stairsQteNextIn <= 0) {
           stairsQteActive = true;
           stairsQteWindowLeft = STAIR_QTE_WINDOW;
-          stairQteEl.textContent = isTouch ? 'tap now' : 'press space';
+          positionStairQte();
           stairQteEl.style.display = 'block';
+          if (!isTouch && document.pointerLockElement === renderer.domElement) {
+            document.exitPointerLock();
+          }
         }
       } else {
         stairsQteWindowLeft -= dt;
@@ -2119,17 +2682,18 @@
           stairsPenaltyTimer = STAIR_QTE_FAIL_DURATION;
           showMessage('stumbled');
           stairsQteNextIn = STAIR_QTE_MIN_INTERVAL + Math.random() * (STAIR_QTE_MAX_INTERVAL - STAIR_QTE_MIN_INTERVAL);
+          tryRelockPointer();
         }
       }
 
       if (audioCtx) {
         const gapFactor = 1 - stairsGap / STAIR_GAP_MAX;
         currentTension += (gapFactor - currentTension) * Math.min(1, dt * 3);
-        if (tensionGain) tensionGain.gain.value = currentTension * 0.32;
+        if (tensionGain) tensionGain.gain.value = currentTension * TENSION_GAIN_MULT;
         if (tensionLFO) tensionLFO.frequency.value = 1.4 + currentTension * 4.5;
         heartbeatTimer -= dt;
         if (currentTension > 0.1 && heartbeatTimer <= 0) {
-          playHeartbeatThump(0.14 + currentTension * 0.32);
+          playHeartbeatThump(0.126 + currentTension * TENSION_GAIN_MULT);
           heartbeatTimer = Math.max(0.3, 0.9 - currentTension * 0.55);
         }
       }
@@ -2155,18 +2719,50 @@
     const darkFactor = 1 - currentDarkness * 0.82;
     ambient.intensity = AMBIENT_BASE * darkFactor;
 
+    // static crackle: irregular bursts so the ear doesn't tune out a perfectly flat hiss
+    if (audioCtx && noiseGain) {
+      staticCrackleTimer -= dt;
+      if (staticCrackleTimer <= 0) {
+        const t = audioCtx.currentTime;
+        const peak = STATIC_BASE_GAIN + 0.05 + Math.random() * 0.05;
+        noiseGain.gain.cancelScheduledValues(t);
+        noiseGain.gain.setValueAtTime(STATIC_BASE_GAIN, t);
+        noiseGain.gain.linearRampToValueAtTime(peak, t + 0.05);
+        noiseGain.gain.linearRampToValueAtTime(STATIC_BASE_GAIN, t + 0.05 + 0.15 + Math.random() * 0.35);
+        staticCrackleTimer = 1.0 + Math.random() * 2.2;
+      }
+    }
+
+    // footsteps
+    if (audioCtx) {
+      const movingInput = !!(keys['KeyW'] || keys['ArrowUp'] || dpad.up || keys['KeyS'] || keys['ArrowDown'] || dpad.down ||
+        keys['KeyD'] || keys['ArrowRight'] || dpad.right || keys['KeyA'] || keys['ArrowLeft'] || dpad.left);
+      const isWalking = (!movementPaused() && !stairsActive && movingInput) || (stairsActive && !stairsEnded);
+      if (isWalking) {
+        footstepTimer -= dt;
+        if (footstepTimer <= 0) {
+          playFootstep();
+          footstepTimer = FOOTSTEP_INTERVAL;
+        }
+      } else {
+        footstepTimer = 0;
+      }
+    }
+
     // message fade
     if (msgTimer > 0) {
       msgTimer -= dt;
       if (msgTimer <= 0) messageEl.style.opacity = '0';
     }
 
-    // camera shake (door rumble)
-    if (shakeTime > 0) {
-      shakeTime -= dt;
-      camera.position.y = EYE_HEIGHT + (Math.random() - 0.5) * 0.05 * Math.max(shakeTime, 0) / 0.4;
-    } else if (!dead) {
-      camera.position.y = EYE_HEIGHT;
+    // camera shake (door rumble) — skipped during the stairs climb, since height there is driven by the ramp itself
+    if (!stairsActive) {
+      if (shakeTime > 0) {
+        shakeTime -= dt;
+        camera.position.y = EYE_HEIGHT + (Math.random() - 0.5) * 0.05 * Math.max(shakeTime, 0) / 0.4;
+      } else if (!dead) {
+        camera.position.y = EYE_HEIGHT;
+      }
     }
 
     // flicker (scaled by the local darkness factor)
