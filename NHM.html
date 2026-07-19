@@ -56,6 +56,21 @@
     cursor: pointer;
     z-index: 20;
   }
+  #tapToBegin {
+    position: fixed; inset: 0;
+    display: none;
+    flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 6px;
+    color: rgba(200,200,200,0.8);
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    text-align: center;
+    background: rgba(0,0,0,0.6);
+    z-index: 50;
+  }
 
   #message {
     position: fixed; top: 18%; left: 50%;
@@ -202,13 +217,55 @@
     padding-bottom: 8px;
     width: 100%;
   }
-  #sensLabel, #volLabel {
+  #sensLabel, #volLabel, #audioToggleLabel {
     font-size: 11px;
     letter-spacing: 0.06em;
     text-transform: uppercase;
     color: rgba(190,190,190,0.8);
   }
   #sensSlider, #volSlider { width: 100%; accent-color: #999; }
+  .settings-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    position: absolute;
+  }
+  .toggle-track {
+    position: absolute;
+    inset: 0;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.24);
+    border-radius: 12px;
+    transition: background 0.15s ease;
+  }
+  .toggle-thumb {
+    position: absolute;
+    top: 2px; left: 2px;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: rgba(190,190,190,0.85);
+    transition: transform 0.15s ease, background 0.15s ease;
+  }
+  .toggle-switch input:checked + .toggle-track {
+    background: rgba(255,255,255,0.22);
+  }
+  .toggle-switch input:checked + .toggle-track .toggle-thumb {
+    transform: translateX(20px);
+    background: rgba(238,238,238,0.95);
+  }
 
   #notebookText {
     font-size: 12.5px;
@@ -336,7 +393,8 @@
 <div id="vignette"></div>
 <div id="message"></div>
 <div id="interactPrompt">press e — interact</div>
-<div id="clickPrompt">click to enable mouse look</div>
+<div id="clickPrompt">click to begin<br><span style="opacity:0.6;font-size:11px">(enables mouse look + sound)</span></div>
+<div id="tapToBegin">tap to begin<br><span style="opacity:0.6;font-size:11px">(enables sound)</span></div>
 <div id="lookLayer"></div>
 <div id="dpad">
   <div class="dpad-btn" id="dpad-up"><span class="arrow arrow-up"></span></div>
@@ -365,6 +423,13 @@
   <div id="settingsTitle">settings</div>
   <label id="sensLabel" for="sensSlider">look sensitivity: <span id="sensValue"></span>/10</label>
   <input type="range" id="sensSlider" step="0.0005">
+  <div class="settings-row">
+    <label id="audioToggleLabel" for="audioToggle">audio: <span id="audioToggleValue">on</span></label>
+    <label class="toggle-switch">
+      <input type="checkbox" id="audioToggle" checked>
+      <span class="toggle-track"><span class="toggle-thumb"></span></span>
+    </label>
+  </div>
   <label id="volLabel" for="volSlider">music volume: <span id="volValue"></span>%</label>
   <input type="range" id="volSlider" min="0" max="100" step="5">
   <div id="settingsClose">close</div>
@@ -1178,8 +1243,15 @@
     }
     return markers;
   }
-  function placeWayfindingArrows(mazeCells, size, startX, startY, goalX, goalY, offX, offZ, trackArr) {
-    const markers = findJunctionMarkers(mazeCells, size, startX, startY, goalX, goalY);
+  function placeWayfindingArrows(mazeCells, size, startX, startY, goalX, goalY, offX, offZ, trackArr, keepFraction) {
+    let markers = findJunctionMarkers(mazeCells, size, startX, startY, goalX, goalY);
+    if (keepFraction !== undefined && keepFraction < 1 && markers.length > 0) {
+      const keepCount = Math.max(1, Math.round(markers.length * keepFraction));
+      const step = markers.length / keepCount;
+      const sampled = [];
+      for (let i = 0; i < keepCount; i++) sampled.push(markers[Math.min(markers.length - 1, Math.floor(i * step))]);
+      markers = sampled;
+    }
     for (const t of markers) {
       const letter = dirLetter(t.outDx, t.outDz);
       const cell = mazeCells[t.y][t.x];
@@ -1207,6 +1279,16 @@
   placeWayfindingArrows(maze1, SIZE1, 0, 0, redCX, redCZ, 0, 0, redKeyArrows);
   placeWayfindingArrows(maze2, SIZE2, 0, 0, blueCX, blueCZ, offsetX2, offsetZ2, blueKeyArrows);
   placeWayfindingArrows(maze2, SIZE2, 0, 0, codeCX, codeCZ, offsetX2, offsetZ2, codeArrows);
+
+  const exitArrows = [];
+  let exitArrowsPlaced = false;
+  function maybeRevealExitArrows() {
+    if (exitArrowsPlaced) return;
+    if (!(inventory.has('key_blue') && codeRead)) return;
+    exitArrowsPlaced = true;
+    placeWayfindingArrows(maze2, SIZE2, 0, 0, door2Edge.cx, door2Edge.cz, offsetX2, offsetZ2, exitArrows, 0.3);
+    setTimeout(() => showMessage('you sense a way out'), 2400);
+  }
 
   // ---------- inventory ----------
   const inventory = new Set();
@@ -1295,6 +1377,7 @@
   let audioStarted = false;
   let masterGain = null;
   let masterVolume = 0.7;
+  let audioEnabled = true;
   let droneGain = null;
   let tensionGain = null;
   let tensionLFO = null;
@@ -1307,12 +1390,12 @@
       if (audioCtx.state === 'suspended') audioCtx.resume();
 
       masterGain = audioCtx.createGain();
-      masterGain.gain.value = masterVolume;
+      masterGain.gain.value = audioEnabled ? masterVolume : 0;
       masterGain.connect(audioCtx.destination);
 
       // low ambient drone, two detuned oscillators for unease
       droneGain = audioCtx.createGain();
-      droneGain.gain.value = 0.13;
+      droneGain.gain.value = 0.2;
       droneGain.connect(masterGain);
 
       const drone1 = audioCtx.createOscillator();
@@ -1352,7 +1435,7 @@
       noiseFilter.frequency.value = 2600;
       noiseFilter.Q.value = 0.5;
       const noiseGain = audioCtx.createGain();
-      noiseGain.gain.value = 0.05;
+      noiseGain.gain.value = 0.11;
       noiseSource.connect(noiseFilter);
       noiseFilter.connect(noiseGain);
       noiseGain.connect(masterGain);
@@ -1518,6 +1601,7 @@
       codeRead = true;
       codeArrows.forEach((a) => scene.remove(a));
       codeArrows.length = 0;
+      maybeRevealExitArrows();
     }
   }
   function closeCode() {
@@ -1645,6 +1729,8 @@
   const codeCloseEl = document.getElementById('codeClose');
   const volSlider = document.getElementById('volSlider');
   const volValueEl = document.getElementById('volValue');
+  const audioToggle = document.getElementById('audioToggle');
+  const audioToggleValueEl = document.getElementById('audioToggleValue');
   const minigamePanel = document.getElementById('minigamePanel');
   const minigameStatusEl = document.getElementById('minigameStatus');
   const minigameCancelEl = document.getElementById('minigameCancel');
@@ -1659,6 +1745,13 @@
     dpadEl.style.display = 'grid';
     lookLayer.style.display = 'block';
     settingsBtn.style.display = 'flex';
+    const tapToBeginEl = document.getElementById('tapToBegin');
+    tapToBeginEl.style.display = 'flex';
+    tapToBeginEl.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      initAudio();
+      tapToBeginEl.style.display = 'none';
+    }, { passive: false, once: true });
   } else {
     hudEl.textContent = 'wasd / arrows — move  ·  mouse — look  ·  e — interact  ·  q — settings';
     clickPrompt.addEventListener('click', () => { initAudio(); renderer.domElement.requestPointerLock(); });
@@ -1692,7 +1785,17 @@
   volSlider.addEventListener('input', () => {
     masterVolume = parseFloat(volSlider.value) / 100;
     volValueEl.textContent = volSlider.value;
-    if (masterGain) masterGain.gain.value = masterVolume;
+    if (masterGain && audioEnabled) masterGain.gain.value = masterVolume;
+  });
+  audioToggle.addEventListener('change', () => {
+    audioEnabled = audioToggle.checked;
+    audioToggleValueEl.textContent = audioEnabled ? 'on' : 'off';
+    if (audioEnabled) {
+      initAudio();
+      if (masterGain) masterGain.gain.value = masterVolume;
+    } else if (masterGain) {
+      masterGain.gain.value = 0;
+    }
   });
   settingsBtn.addEventListener('touchstart', (e) => { initAudio(); e.preventDefault(); settingsOpen ? closeSettings() : openSettings(); }, { passive: false });
   settingsBtn.addEventListener('click', () => { settingsOpen ? closeSettings() : openSettings(); });
@@ -1859,6 +1962,7 @@
         blueKeyArrows.length = 0;
         showMessage('blue key acquired');
         updateInventoryHud();
+        maybeRevealExitArrows();
       } else {
         blueKeyGroup.rotation.y += dt * 1.2;
         blueKeyGroup.position.y = keyBaseY + Math.sin(performance.now() * 0.0022 + 2) * 0.08;
